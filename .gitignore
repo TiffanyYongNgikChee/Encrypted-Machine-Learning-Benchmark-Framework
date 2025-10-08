@@ -1,1 +1,26 @@
-/target
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# C++
+cpp_wrapper/build/
+*.dylib
+*.so
+*.o
+*.a
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
