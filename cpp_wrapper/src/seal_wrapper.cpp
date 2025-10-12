@@ -133,3 +133,30 @@ extern "C" SEALDecryptor* seal_create_decryptor(
 extern "C" void seal_destroy_decryptor(SEALDecryptor* dec) {
     if (dec) delete dec;
 }
+
+// ============================================
+// Plaintext Operations
+// ============================================
+extern "C" SEALPlaintext* seal_create_plaintext(const char* hex_string) {
+    try {
+        SEALPlaintext* plain = new SEALPlaintext();
+        plain->plaintext = Plaintext(hex_string);
+        return plain;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+extern "C" void seal_destroy_plaintext(SEALPlaintext* plain) {
+    if (plain) delete plain;
+}
+
+extern "C" const char* seal_plaintext_to_string(SEALPlaintext* plain) {
+    if (!plain) return nullptr;
+    // Note: This leaks memory - for demo only
+    // In production, need better string management
+    string str = plain->plaintext.to_string();
+    char* result = new char[str.length() + 1];
+    strcpy(result, str.c_str());
+    return result;
+}
