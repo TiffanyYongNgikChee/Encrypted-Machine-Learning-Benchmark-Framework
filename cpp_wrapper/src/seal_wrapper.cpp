@@ -186,3 +186,25 @@ extern "C" SEALCiphertext* seal_encrypt(
 extern "C" void seal_destroy_ciphertext(SEALCiphertext* cipher) {
     if (cipher) delete cipher;
 }
+
+// ============================================
+// Decryption Implementation
+// ============================================
+extern "C" SEALPlaintext* seal_decrypt(
+    SEALDecryptor* decryptor,
+    SEALCiphertext* ciphertext
+) {
+    try {
+        if (!decryptor || !ciphertext) return nullptr;
+        
+        SEALPlaintext* plain = new SEALPlaintext();
+        decryptor->decryptor->decrypt(
+            ciphertext->ciphertext,
+            plain->plaintext
+        );
+        
+        return plain;
+    } catch (...) {
+        return nullptr;
+    }
+}
