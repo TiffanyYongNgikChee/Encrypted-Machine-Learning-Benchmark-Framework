@@ -11,7 +11,7 @@ extern "C" {
 // ============================================
 // Opaque Pointers (hide C++ from Rust)
 // ============================================
-typedef struct SEALContext SEALContext;
+typedef struct SEALContextWrapper SEALContextWrapper;
 typedef struct SEALEncryptor SEALEncryptor;
 typedef struct SEALDecryptor SEALDecryptor;
 typedef struct SEALCiphertext SEALCiphertext;
@@ -20,26 +20,26 @@ typedef struct SEALPlaintext SEALPlaintext;
 // ============================================
 // Context Management
 // ============================================
-SEALContext* seal_create_context(
+SEALContextWrapper* seal_create_context(
     uint64_t poly_modulus_degree,
     const uint64_t* coeff_modulus, 
     size_t coeff_modulus_size,
     uint64_t plain_modulus
 );
-void seal_destroy_context(SEALContext* ctx);
+void seal_destroy_context(SEALContextWrapper* ctx);
 
 // ============================================
 // Encryption/Decryption Setup
 // ============================================
 SEALEncryptor* seal_create_encryptor(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     const uint8_t* public_key,
     size_t public_key_size
 );
 void seal_destroy_encryptor(SEALEncryptor* enc);
 
 SEALDecryptor* seal_create_decryptor(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     const uint8_t* secret_key,
     size_t secret_key_size
 );
@@ -73,13 +73,13 @@ SEALPlaintext* seal_decrypt(
 // Homomorphic Operations
 // ============================================
 SEALCiphertext* seal_add(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     SEALCiphertext* a,
     SEALCiphertext* b
 );
 
 SEALCiphertext* seal_multiply(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     SEALCiphertext* a,
     SEALCiphertext* b
 );

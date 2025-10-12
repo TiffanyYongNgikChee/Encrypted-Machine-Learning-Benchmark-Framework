@@ -9,7 +9,7 @@ using namespace std;
 // ============================================
 // Opaque Struct Definitions
 // ============================================
-struct SEALContext {
+struct SEALContextWrapper {
     shared_ptr<seal::SEALContext> context;
     shared_ptr<KeyGenerator> keygen;
     PublicKey public_key;
@@ -35,7 +35,7 @@ struct SEALPlaintext {
 // ============================================
 // Context Management Implementation
 // ============================================
-extern "C" SEALContext* seal_create_context(
+extern "C" SEALContextWrapper* seal_create_context(
     uint64_t poly_modulus_degree,
     const uint64_t* coeff_modulus_bits, 
     size_t coeff_modulus_size,
@@ -63,10 +63,10 @@ extern "C" SEALContext* seal_create_context(
         KeyGenerator keygen(*context);
         
         // Allocate and populate result
-        SEALContext* result = new SEALContext();
+        SEALContextWrapper* result = new SEALContextWrapper();
         result->context = context;
-        result->keygen = make_shared<KeyGenerator>(keygen);
-        result->public_key = keygen.create_public_key();
+        result->keygen = make_shared<KeyGenerator>(*context);
+        keygen.create_public_key(result->public_key);
         result->secret_key = keygen.secret_key();
         
         return result;
@@ -76,7 +76,7 @@ extern "C" SEALContext* seal_create_context(
     }
 }
 
-extern "C" void seal_destroy_context(SEALContext* ctx) {
+extern "C" void seal_destroy_context(SEALContextWrapper* ctx) {
     if (ctx) delete ctx;
 }
 
@@ -84,7 +84,7 @@ extern "C" void seal_destroy_context(SEALContext* ctx) {
 // Encryptor Implementation
 // ============================================
 extern "C" SEALEncryptor* seal_create_encryptor(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     const uint8_t* public_key,
     size_t public_key_size
 ) {
@@ -111,7 +111,7 @@ extern "C" void seal_destroy_encryptor(SEALEncryptor* enc) {
 // Decryptor Implementation
 // ============================================
 extern "C" SEALDecryptor* seal_create_decryptor(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     const uint8_t* secret_key,
     size_t secret_key_size
 ) {
@@ -213,7 +213,7 @@ extern "C" SEALPlaintext* seal_decrypt(
 // Homomorphic Operations
 // ============================================
 extern "C" SEALCiphertext* seal_add(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     SEALCiphertext* a,
     SEALCiphertext* b
 ) {
@@ -235,7 +235,7 @@ extern "C" SEALCiphertext* seal_add(
 }
 
 extern "C" SEALCiphertext* seal_multiply(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     SEALCiphertext* a,
     SEALCiphertext* b
 ) {
