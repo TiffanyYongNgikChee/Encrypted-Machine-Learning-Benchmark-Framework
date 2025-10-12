@@ -79,3 +79,30 @@ extern "C" SEALContext* seal_create_context(
 extern "C" void seal_destroy_context(SEALContext* ctx) {
     if (ctx) delete ctx;
 }
+
+// ============================================
+// Encryptor Implementation
+// ============================================
+extern "C" SEALEncryptor* seal_create_encryptor(
+    SEALContext* ctx,
+    const uint8_t* public_key,
+    size_t public_key_size
+) {
+    try {
+        if (!ctx) return nullptr;
+        
+        SEALEncryptor* enc = new SEALEncryptor();
+        enc->encryptor = make_unique<Encryptor>(
+            *ctx->context, 
+            ctx->public_key
+        );
+        
+        return enc;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+extern "C" void seal_destroy_encryptor(SEALEncryptor* enc) {
+    if (enc) delete enc;
+}
