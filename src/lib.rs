@@ -105,6 +105,50 @@ impl Drop for Encryptor {
     }
 }
 
+// ============================================
+// Decryptor
+// ============================================
+pub struct Decryptor {
+    ptr: NonNull<bindings::SEALDecryptor>,
+}
+
+impl Decryptor {
+    pub fn new(context: &Context) -> Result<Self> {
+        let ptr = unsafe {
+            bindings::seal_create_decryptor(
+                context.ptr.as_ptr(),
+                std::ptr::null(),
+                0,
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Decryptor { ptr })
+            .ok_or(SealError::NullPointer)
+    }
+    
+    pub fn decrypt(&self, ciphertext: &Ciphertext) -> Result<Plaintext> {
+        let ptr = unsafe {
+            bindings::seal_decrypt(
+                self.ptr.as_ptr(),
+                ciphertext.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Plaintext { ptr })
+            .ok_or(SealError::DecryptionFailed)
+    }
+}
+
+impl Drop for Decryptor {
+    fn drop(&mut self) {
+        unsafe {
+            bindings::seal_destroy_decryptor(self.ptr.as_ptr());
+        }
+    }
+}
+
 
 // ============================================
 // Plaintext
