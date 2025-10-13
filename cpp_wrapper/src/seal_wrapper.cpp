@@ -240,6 +240,43 @@ extern "C" void seal_destroy_ciphertext(SEALCiphertext* cipher) {
 }
 
 // ============================================
+// Ciphertext Inspection
+// ============================================
+extern "C" size_t seal_ciphertext_size(SEALCiphertext* cipher) {
+    if (!cipher) return 0;
+    return cipher->ciphertext.size();
+}
+
+extern "C" uint64_t seal_ciphertext_coeff_count(SEALCiphertext* cipher) {
+    if (!cipher) return 0;
+    return cipher->ciphertext.poly_modulus_degree();
+}
+
+extern "C" size_t seal_ciphertext_byte_count(SEALCiphertext* cipher) {
+    if (!cipher) return 0;
+    return cipher->ciphertext.save_size();
+}
+
+extern "C" const char* seal_ciphertext_info(SEALCiphertext* cipher) {
+    if (!cipher) return nullptr;
+    try {
+        stringstream ss;
+        ss << "Ciphertext["
+           << "size=" << cipher->ciphertext.size()
+           << ", poly_degree=" << cipher->ciphertext.poly_modulus_degree()
+           << ", coeff_mod_count=" << cipher->ciphertext.coeff_modulus_size()
+           << ", bytes=" << cipher->ciphertext.save_size()
+           << "]";
+        string str = ss.str();
+        char* result = new char[str.length() + 1];
+        strcpy(result, str.c_str());
+        return result;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// ============================================
 // Decryption Implementation
 // ============================================
 

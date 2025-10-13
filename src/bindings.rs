@@ -79,6 +79,12 @@ unsafe extern "C" {
     ) -> *mut SEALPlaintext;
     
     pub fn seal_destroy_ciphertext(cipher: *mut SEALCiphertext);
+
+    // Ciphertext inspection (NEW!)
+    pub fn seal_ciphertext_size(cipher: *mut SEALCiphertext) -> usize;
+    pub fn seal_ciphertext_coeff_count(cipher: *mut SEALCiphertext) -> u64;
+    pub fn seal_ciphertext_byte_count(cipher: *mut SEALCiphertext) -> usize;
+    pub fn seal_ciphertext_info(cipher: *mut SEALCiphertext) -> *const c_char;
     
     // Homomorphic operations
     pub fn seal_add(

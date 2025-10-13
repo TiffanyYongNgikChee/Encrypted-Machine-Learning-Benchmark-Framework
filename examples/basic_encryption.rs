@@ -9,14 +9,14 @@
 use he_benchmark::{Context, Encryptor, Decryptor, Plaintext, add};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🔐 SEAL FFI Test Starting...\n");
+    println!("SEAL FFI Test Starting...\n");
 
     // ============================================
     // TEST 1: Context Creation
     // ============================================
     println!("Test 1: Creating SEAL context...");
     let context = Context::new(4096, 1024)?;
-    println!("✅ Context created successfully\n");
+    println!("Context created successfully\n");
     
     // ============================================
     // TEST 2: Basic Encryption/Decryption
@@ -26,12 +26,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let decryptor = Decryptor::new(&context)?;
     
     // Create plaintext
-    let plain = Plaintext::from_hex("42")?;
+    let plain = Plaintext::from_hex("142")?;
     println!("   Original plaintext: {}", plain.to_string()?);
     
     // Encrypt
     let cipher = encryptor.encrypt(&plain)?;
-    println!("   ✅ Encryption successful");
+    println!("   Encryption successful");
+
+    // INSPECT THE CIPHERTEXT - NEW!
+    println!("\n    Ciphertext Details:");
+    println!("      {}", cipher.info()?);
+    println!("      └─ Polynomials: {}", cipher.size());
+    println!("      └─ Coefficients per poly: {}", cipher.coeff_count());
+    println!("      └─ Size: {} bytes ({:.2} KB)", 
+             cipher.byte_count(), 
+             cipher.byte_count() as f64 / 1024.0);
     
     // Decrypt
     let decrypted = decryptor.decrypt(&cipher)?;
@@ -39,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Verify
     assert_eq!(plain.to_string()?, decrypted.to_string()?);
-    println!("✅ Encryption/Decryption works!\n");
+    println!("Encryption/Decryption works!\n");
 
     // ============================================
     // TEST 3: Homomorphic Addition
@@ -56,15 +65,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let decrypted_sum = decryptor.decrypt(&cipher_sum)?;
     
     println!("   5 + 7 (encrypted) = {}", decrypted_sum.to_string()?);
-    println!("✅ Homomorphic addition works!\n");
+    println!("    Result ciphertext: {}", cipher_sum.info()?);
+    println!(" Homomorphic addition works!\n");
     
     // ============================================
     // FINAL RESULT
     // ============================================
-    println!("🎉 ALL TESTS PASSED!");
-    println!("\n✅ Rust ↔ SEAL FFI is WORKING!");
-    println!("✅ Ready to proceed with Plan A");
-    
+    println!(" ALL TESTS PASSED!");
+    println!("\n Rust ↔ SEAL FFI is WORKING!");
     
     Ok(())
 }

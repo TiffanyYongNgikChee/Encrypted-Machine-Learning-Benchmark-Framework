@@ -88,6 +88,14 @@ SEALPlaintext* seal_decrypt(
 );
 
 // ============================================
+// Ciphertext Inspection
+// ============================================
+size_t seal_ciphertext_size(SEALCiphertext* cipher);
+uint64_t seal_ciphertext_coeff_count(SEALCiphertext* cipher);
+size_t seal_ciphertext_byte_count(SEALCiphertext* cipher);
+const char* seal_ciphertext_info(SEALCiphertext* cipher);
+
+// ============================================
 // Homomorphic Operations
 // ============================================
 

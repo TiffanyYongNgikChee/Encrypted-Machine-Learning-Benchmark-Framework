@@ -225,6 +225,44 @@ pub struct Ciphertext {
     ptr: NonNull<bindings::SEALCiphertext>,
 }
 
+impl Ciphertext {
+    /// Get the number of polynomials in the ciphertext (usually 2 for fresh encryptions)
+    pub fn size(&self) -> usize {
+        unsafe {
+            bindings::seal_ciphertext_size(self.ptr.as_ptr())
+        }
+    }
+    
+    /// Get the polynomial modulus degree (number of coefficients per polynomial)
+    pub fn coeff_count(&self) -> u64 {
+        unsafe {
+            bindings::seal_ciphertext_coeff_count(self.ptr.as_ptr())
+        }
+    }
+    
+    /// Get the total size in bytes when serialized
+    pub fn byte_count(&self) -> usize {
+        unsafe {
+            bindings::seal_ciphertext_byte_count(self.ptr.as_ptr())
+        }
+    }
+    
+    /// Get a human-readable summary of the ciphertext
+    pub fn info(&self) -> Result<String> {
+        let c_str = unsafe {
+            let ptr = bindings::seal_ciphertext_info(self.ptr.as_ptr());
+            if ptr.is_null() {
+                return Err(SealError::NullPointer);
+            }
+            CStr::from_ptr(ptr)
+        };
+        
+        c_str.to_str()
+            .map(|s| s.to_owned())
+            .map_err(|_| SealError::OperationFailed)
+    }
+}
+
 impl Drop for Ciphertext {
     fn drop(&mut self) {
         unsafe {
