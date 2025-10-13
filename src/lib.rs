@@ -60,3 +60,105 @@ impl Drop for Context {
         }
     }
 }
+
+// ============================================
+// Encryptor
+// ============================================
+pub struct Encryptor {
+    ptr: NonNull<bindings::SEALEncryptor>,
+}
+
+impl Encryptor {
+    pub fn new(context: &Context) -> Result<Self> {
+        let ptr = unsafe {
+            bindings::seal_create_encryptor(
+                context.ptr.as_ptr(),
+                std::ptr::null(),
+                0,
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Encryptor { ptr })
+            .ok_or(SealError::NullPointer)
+    }
+    
+    pub fn encrypt(&self, plaintext: &Plaintext) -> Result<Ciphertext> {
+        let ptr = unsafe {
+            bindings::seal_encrypt(
+                self.ptr.as_ptr(),
+                plaintext.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Ciphertext { ptr })
+            .ok_or(SealError::EncryptionFailed)
+    }
+}
+
+impl Drop for Encryptor {
+    fn drop(&mut self) {
+        unsafe {
+            bindings::seal_destroy_encryptor(self.ptr.as_ptr());
+        }
+    }
+}
+
+
+// ============================================
+// Plaintext
+// ============================================
+pub struct Plaintext {
+    ptr: NonNull<bindings::SEALPlaintext>,
+}
+
+impl Plaintext {
+    pub fn from_hex(hex: &str) -> Result<Self> {
+        let c_hex = CString::new(hex).map_err(|_| SealError::InvalidParameter)?;
+        
+        let ptr = unsafe {
+            bindings::seal_create_plaintext(c_hex.as_ptr())
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Plaintext { ptr })
+            .ok_or(SealError::NullPointer)
+    }
+    
+    pub fn to_string(&self) -> Result<String> {
+        let ptr = unsafe {
+            bindings::seal_plaintext_to_string(self.ptr.as_ptr())
+        };
+        
+        if ptr.is_null() {
+            return Err(SealError::NullPointer);
+        }
+        
+        let c_str = unsafe { CStr::from_ptr(ptr) };
+        Ok(c_str.to_string_lossy().into_owned())
+    }
+}
+
+impl Drop for Plaintext {
+    fn drop(&mut self) {
+        unsafe {
+            bindings::seal_destroy_plaintext(self.ptr.as_ptr());
+        }
+    }
+}
+
+// ============================================
+// Ciphertext
+// ============================================
+pub struct Ciphertext {
+    ptr: NonNull<bindings::SEALCiphertext>,
+}
+
+impl Drop for Ciphertext {
+    fn drop(&mut self) {
+        unsafe {
+            bindings::seal_destroy_ciphertext(self.ptr.as_ptr());
+        }
+    }
+}
