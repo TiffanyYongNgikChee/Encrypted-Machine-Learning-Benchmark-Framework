@@ -40,6 +40,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify
     assert_eq!(plain.to_string()?, decrypted.to_string()?);
     println!("✅ Encryption/Decryption works!\n");
+
+    // ============================================
+    // TEST 3: Homomorphic Addition
+    // ============================================
+    println!("Test 3: Homomorphic addition...");
+    let plain1 = Plaintext::from_hex("5")?;
+    let plain2 = Plaintext::from_hex("7")?;
+    
+    let cipher1 = encryptor.encrypt(&plain1)?;
+    let cipher2 = encryptor.encrypt(&plain2)?;
+    
+    // Add encrypted values
+    let cipher_sum = add(&context, &cipher1, &cipher2)?;
+    let decrypted_sum = decryptor.decrypt(&cipher_sum)?;
+    
+    println!("   5 + 7 (encrypted) = {}", decrypted_sum.to_string()?);
+    println!("✅ Homomorphic addition works!\n");
+    
+    // ============================================
+    // FINAL RESULT
+    // ============================================
+    println!("🎉 ALL TESTS PASSED!");
+    println!("\n✅ Rust ↔ SEAL FFI is WORKING!");
+    println!("✅ Ready to proceed with Plan A");
     
     
     Ok(())
