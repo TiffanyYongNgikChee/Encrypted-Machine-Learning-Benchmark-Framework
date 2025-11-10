@@ -1,5 +1,4 @@
 #ifndef SEAL_WRAPPER_H 
-// Only read this file one time.
 #define SEAL_WRAPPER_H
 
 #include <stdint.h>
@@ -78,6 +77,32 @@ SEALCiphertext* seal_encrypt(
     SEALPlaintext* plaintext
 );
 void seal_destroy_ciphertext(SEALCiphertext* cipher);
+
+// ============================================
+// Batch Encoder (for vectors of integers)
+// ============================================
+typedef struct SEALBatchEncoder SEALBatchEncoder;
+
+SEALBatchEncoder* seal_create_batch_encoder(SEALContext* ctx);
+void seal_destroy_batch_encoder(SEALBatchEncoder* encoder);
+
+// Encode vector of integers to plaintext
+SEALPlaintext* seal_batch_encode(
+    SEALBatchEncoder* encoder,
+    const int64_t* values,
+    size_t values_size
+);
+
+// Decode plaintext back to vector
+void seal_batch_decode(
+    SEALBatchEncoder* encoder,
+    SEALPlaintext* plain,
+    int64_t* output,
+    size_t* output_size
+);
+
+// Get slot count (how many values can fit in one ciphertext)
+size_t seal_get_slot_count(SEALBatchEncoder* encoder);
 
 // ============================================
 // Decryption Operations
