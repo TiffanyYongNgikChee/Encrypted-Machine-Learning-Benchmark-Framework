@@ -2,6 +2,7 @@
 #include "seal/seal.h"
 #include <memory>
 #include <stdexcept>
+#include <cstring>
 
 using namespace seal;
 using namespace std;
@@ -18,20 +19,34 @@ struct SEALContextWrapper {
     SecretKey secret_key;
 };
 
+// SEALEncryptor: Wrapper for SEAL's Encryptor object
 struct SEALEncryptor {
-    unique_ptr<Encryptor> encryptor;
+    unique_ptr<Encryptor> encryptor; // unique_ptr: Only one owner, auto-cleanup
 };
 
+// SEALDecryptor: Wrapper for SEAL's Decryptor object
 struct SEALDecryptor {
-    unique_ptr<Decryptor> decryptor;
+    unique_ptr<Decryptor> decryptor; // unique_ptr: Exclusive ownership
 };
 
+// SEALCiphertext: Wrapper for encrypted data
 struct SEALCiphertext {
-    Ciphertext ciphertext;
+    Ciphertext ciphertext; // not pointer: Ciphertext has proper copy/move semantics
 };
 
+// SEALPlaintext: Wrapper for plaintext data (before encryption)
 struct SEALPlaintext {
-    Plaintext plaintext;
+    Plaintext plaintext; // not pointer: Plaintext is lightweight
+};
+
+// SEALBatchEncoder: Wrapper for encoding vectors of integers
+struct SEALBatchEncoder {
+    unique_ptr<BatchEncoder> encoder; // unique_ptr: One encoder per context
+};
+
+// SEALGaloisKeys: Wrapper for rotation keys
+struct SEALGaloisKeys {
+    GaloisKeys keys; // not pointer: GaloisKeys has proper move semantics
 };
 
 // ============================================
@@ -170,6 +185,96 @@ extern "C" SEALDecryptor* seal_create_decryptor(
 // Frees decryptor memory
 extern "C" void seal_destroy_decryptor(SEALDecryptor* dec) {
     if (dec) delete dec;
+}
+
+// Batch Encoder
+// PURPOSE: Create encoder for packing multiple integers into one ciphertext
+// WHY BATCH ENCODING: More efficient than encrypting one value at a time
+// EXAMPLE: Instead of 10 ciphertexts for 10 numbers, use 1 ciphertext for all 10
+extern "C" SEALBatchEncoder* seal_create_batch_encoder(SEALContextWrapper* ctx) {
+    try {
+        if (!ctx) return nullptr;
+        
+        // Allocate encoder wrapper
+        SEALBatchEncoder* encoder = new SEALBatchEncoder();
+
+        // Create SEAL BatchEncoder
+        encoder->encoder = unique_ptr<BatchEncoder>(
+            new BatchEncoder(*ctx->seal_context) 
+        );
+        
+        return encoder;
+    } catch (...) {
+        return nullptr;
+    }
+}
+// Free batch encoder memory
+extern "C" void seal_destroy_batch_encoder(SEALBatchEncoder* encoder) {
+    if (encoder) delete encoder;
+}
+
+// PURPOSE: Encode vector of integers into plaintext
+// WHAT IT DOES: [1, 2, 3, 4, ...] → Plaintext polynomial
+extern "C" SEALPlaintext* seal_batch_encode(
+    SEALBatchEncoder* encoder,
+    const int64_t* values, // Array of integers from Rust
+    size_t values_size // How many integers
+) {
+    try {
+        if (!encoder || !values) return nullptr;
+        
+        // Convert C array to C++ vector
+        // SEAL's encode() function expects std::vector
+        vector<int64_t> vec(values, values + values_size);
+        
+        // Create plaintext wrapper
+        SEALPlaintext* plain = new SEALPlaintext();
+
+        // Encode vector into plaintext
+        // Integers are packed into polynomial coefficients
+        encoder->encoder->encode(vec, plain->plaintext);
+        
+        return plain;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// PURPOSE: Decode plaintext back into vector of integers
+// Plaintext polynomial → [1, 2, 3, 4, ...]
+extern "C" void seal_batch_decode(
+    SEALBatchEncoder* encoder,
+    SEALPlaintext* plain,
+    int64_t* output, // Buffer allocated by Rust
+    size_t* output_size // IN: buffer size, OUT: actual data size
+) {
+    try {
+        if (!encoder || !plain || !output || !output_size) return;
+        
+        // Decode plaintext into vector
+        vector<int64_t> vec;
+        encoder->encoder->decode(plain->plaintext, vec);
+        
+        // Copy to Rust's buffer (only copy what fits)
+        // min(): Prevent buffer overflow if vec is larger than output buffer
+        size_t copy_size = min(vec.size(), *output_size);
+        memcpy(output, vec.data(), copy_size * sizeof(int64_t));
+
+        // Tell Rust how much data we actually wrote
+        *output_size = copy_size;
+        
+    } catch (...) {
+        // On error, set output_size to 0
+        *output_size = 0;
+    }
+}
+
+// PURPOSE: Get how many integers can fit in one ciphertext
+// Rust needs to know buffer size for encoding/decoding
+extern "C" size_t seal_get_slot_count(SEALBatchEncoder* encoder) {
+    if (!encoder) return 0;
+    return encoder->encoder->slot_count();
+    // TYPICAL VALUES: poly_degree=8192 → slot_count=4096
 }
 
 
