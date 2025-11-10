@@ -19,6 +19,7 @@ target_include_directories(seal_wrapper PUBLIC
 
 # Set C++17 standard
 set_property(TARGET seal_wrapper PROPERTY CXX_STANDARD 17)
+set_property(TARGET seal_wrapper PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Install library
 install(TARGETS seal_wrapper

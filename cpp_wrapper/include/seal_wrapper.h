@@ -22,6 +22,7 @@ typedef struct SEALDecryptor SEALDecryptor;
 typedef struct SEALCiphertext SEALCiphertext;
 typedef struct SEALPlaintext SEALPlaintext;
 
+
 // ============================================
 // Context Management
 // ============================================
@@ -83,7 +84,7 @@ void seal_destroy_ciphertext(SEALCiphertext* cipher);
 // ============================================
 typedef struct SEALBatchEncoder SEALBatchEncoder;
 
-SEALBatchEncoder* seal_create_batch_encoder(SEALContext* ctx);
+SEALBatchEncoder* seal_create_batch_encoder(SEALContextWrapper* ctx);
 void seal_destroy_batch_encoder(SEALBatchEncoder* encoder);
 
 // Encode vector of integers to plaintext
@@ -109,14 +110,14 @@ size_t seal_get_slot_count(SEALBatchEncoder* encoder);
 // ============================================
 typedef struct SEALGaloisKeys SEALGaloisKeys;
 
-SEALGaloisKeys* seal_generate_galois_keys(SEALContext* ctx);
+SEALGaloisKeys* seal_generate_galois_keys(SEALContextWrapper* ctx);
 void seal_destroy_galois_keys(SEALGaloisKeys* keys);
 
 // ============================================
 // Rotation Operations
 // ============================================
 SEALCiphertext* seal_rotate_rows(
-    SEALContext* ctx,
+    SEALContextWrapper* ctx,
     SEALCiphertext* cipher,
     int steps,
     SEALGaloisKeys* galois_keys

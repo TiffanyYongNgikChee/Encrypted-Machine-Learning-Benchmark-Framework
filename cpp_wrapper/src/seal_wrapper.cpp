@@ -172,6 +172,7 @@ extern "C" void seal_destroy_decryptor(SEALDecryptor* dec) {
     if (dec) delete dec;
 }
 
+
 // ============================================
 // Plaintext Operations
 // ============================================
