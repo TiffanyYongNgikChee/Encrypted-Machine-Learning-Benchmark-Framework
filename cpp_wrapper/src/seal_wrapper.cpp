@@ -277,6 +277,51 @@ extern "C" size_t seal_get_slot_count(SEALBatchEncoder* encoder) {
     // TYPICAL VALUES: poly_degree=8192 → slot_count=4096
 }
 
+// ============================================
+// Galois Keys
+// ============================================
+extern "C" SEALGaloisKeys* seal_generate_galois_keys(SEALContextWrapper* ctx) {
+    try {
+        if (!ctx) return nullptr;
+        
+        SEALGaloisKeys* gal_keys = new SEALGaloisKeys();
+        // Create galois keys and move into our struct
+        ctx->keygen->create_galois_keys(gal_keys->keys);
+        
+        return gal_keys;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+extern "C" void seal_destroy_galois_keys(SEALGaloisKeys* keys) {
+    if (keys) delete keys;
+}
+
+extern "C" SEALCiphertext* seal_rotate_rows(
+    SEALContextWrapper* ctx,
+    SEALCiphertext* cipher,
+    int steps,
+    SEALGaloisKeys* galois_keys
+) {
+    try {
+        if (!ctx || !cipher || !galois_keys) return nullptr;
+        
+        Evaluator evaluator(*ctx->seal_context);  // ⭐ Dereference seal_context
+        SEALCiphertext* result = new SEALCiphertext();
+        
+        evaluator.rotate_rows(
+            cipher->ciphertext,
+            steps,
+            galois_keys->keys,
+            result->ciphertext
+        );
+        
+        return result;
+    } catch (...) {
+        return nullptr;
+    }
+}
 
 // ============================================
 // Plaintext Operations
