@@ -105,6 +105,24 @@ void seal_batch_decode(
 size_t seal_get_slot_count(SEALBatchEncoder* encoder);
 
 // ============================================
+// Galois Keys (for rotation)
+// ============================================
+typedef struct SEALGaloisKeys SEALGaloisKeys;
+
+SEALGaloisKeys* seal_generate_galois_keys(SEALContext* ctx);
+void seal_destroy_galois_keys(SEALGaloisKeys* keys);
+
+// ============================================
+// Rotation Operations
+// ============================================
+SEALCiphertext* seal_rotate_rows(
+    SEALContext* ctx,
+    SEALCiphertext* cipher,
+    int steps,
+    SEALGaloisKeys* galois_keys
+);
+
+// ============================================
 // Decryption Operations
 // ============================================
 SEALPlaintext* seal_decrypt(
