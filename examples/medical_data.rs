@@ -204,6 +204,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    Encryption time: {:.2}s\n", encrypt_time.as_secs_f64());
     
     sleep(Duration::from_secs(2));
+
+    // PHASE 4: ENCRYPTED OPERATIONS (DEMO)
+    println!("╔═══════════════════════════════════════════════════════════════════╗");
+    println!("║           OPERATIONS ON ENCRYPTED DATA                            ║");
+    println!("╚═══════════════════════════════════════════════════════════════════╝");
+    println!();
+    println!("    Demonstrating homomorphic operations:");
+    println!("   → Rotating encrypted data without decryption\n");
+    
+    let phase4_start = Instant::now();
+    
+    processing_step("Rotating patient data by 5 positions", 1500);
+    
+    // Homomorphic encryption stores data in slots. 
+    // A rotation moves the encrypted data around within these slots 
+    // — similar to rotating an array — but without decrypting anything.
+
+    // &context → the encryption context that holds parameters and keys.
+    // &ciphertext → the encrypted medical record produced in Phase 3.
+    // 5 → the rotation step — shift data by 5 positions.
+    // &galois_keys → special keys that enable rotation operations on encrypted data.
+    // If the encrypted slots represent [A, B, C, D, E], a rotation by 2 would produce [C, D, E, A, B] — still encrypted, but rearranged.
+    let rotated = rotate_rows(&context, &ciphertext, 5, &galois_keys)?;
+    
+    processing_step("Preparing second encrypted value for demo", 800);
+    // Creates a vector of ones (1i64) with length equal to slot_count (the number of available encryption slots determined earlier).
+    let offset = vec![1i64; slot_count]; // it will later be encoded and encrypted to form another ciphertext, used to show that addition works on encrypted data.
+    
+    // This step doesn’t encrypt yet — it just prepares the data.
+    // Encodes that vector of ones into a plaintext polynomial (the internal format required for homomorphic encryption).
+    let plain2 = encoder.encode(&offset)?;
+    // Encrypts that encoded plaintext into another ciphertext (cipher2).
+    let cipher2 = encryptor.encrypt(&plain2)?;
+    // Both are fully encrypted and cannot be read directly.
+    
+    processing_step("Adding encrypted values (still encrypted!)", 600);
+    // Performs homomorphic addition between two ciphertexts — rotated and cipher2.
+    let cipher_sum = add(&context, &rotated, &cipher2)?;
+    
+    let phase4_time = phase4_start.elapsed();
+    
+    println!("\n    Encrypted operations complete!");
+    println!("    All operations done WITHOUT seeing the data");
+    println!("    Operation time: {:.2}s\n", phase4_time.as_secs_f64());
+    
+    sleep(Duration::from_secs(1));
     
     
     Ok(())
