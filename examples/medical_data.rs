@@ -20,6 +20,19 @@ fn clear_screen() {
     io::stdout().flush().unwrap(); // Ensures that the printed escape sequence is actually sent to the terminal immediately (not buffered)
 }
 
+// Introduce the entry point (main)
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    clear_screen();
+    
+    println!("╔═══════════════════════════════════════════════════════════════════╗");
+    println!("║       🏥 MEDICAL DATA ENCRYPTION - SEAL DEMONSTRATION            ║");
+    println!("║                                                                   ║");
+    println!("╚═══════════════════════════════════════════════════════════════════╝");
+    println!();
+    
+    Ok(())
+}
+
 /// Print progress bar
 // label - name of the process (e.g. "Encryption")
 // current and total - track how far
@@ -60,4 +73,5 @@ fn processing_step(label: &str, duration_ms: u64) {
         sleep(Duration::from_millis(step_duration));
     }
     println!(" /DONE");
+
 }
