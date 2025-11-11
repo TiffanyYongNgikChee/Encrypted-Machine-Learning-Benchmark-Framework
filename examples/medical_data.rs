@@ -312,6 +312,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Decryption time: {:.2}s\n", phase5_time.as_secs_f64());
     
     sleep(Duration::from_secs(2));
+
+    clear_screen();
+    
+    let total_time = phase1_time + phase2_time + phase3_time + phase4_time + phase5_time;
+    
+    println!("   RESULTS:");
+    println!("   ────────────────────────────────────────────────────────────────");
+    println!("   Phase 1: Setup & Keys        │ {:.2}s", phase1_time.as_secs_f64());
+    println!("   Phase 2: Data Preparation    │ {:.2}s", phase2_time.as_secs_f64());
+    println!("   Phase 3: Encryption          │ {:.2}s", phase3_time.as_secs_f64());
+    println!("   Phase 4: Encrypted Operations│ {:.2}s", phase4_time.as_secs_f64());
+    println!("   Phase 5: Decryption          │ {:.2}s", phase5_time.as_secs_f64());
+    println!("   ────────────────────────────────────────────────────────────────");
+    println!("   TOTAL TIME:                  │ {:.2}s", total_time.as_secs_f64());
+    println!();
     
     
     Ok(())
