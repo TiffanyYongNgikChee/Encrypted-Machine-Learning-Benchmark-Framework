@@ -1,13 +1,17 @@
 //! Raw FFI bindings to SEAL C wrapper
 
+// C-compatible integer and character types — they ensure the same size in both languages
+// That alias ensures that Rust and C use the same size and binary format when they talk to each other through FFI (Foreign Function Interface).
 use std::os::raw::{c_char, c_ulonglong};
 
-// ============================================
 // Opaque Types (match C header)
-// ============================================
+// Used for handles like SEALContext, SEALEncryptor, SEALCiphertext, etc.
+// u8 - makes them zero-sized opaque placeholders 
+//— Rust only knows they exist, not what’s inside.
+// each one is like a pointer to a hidden C object that SEAL manages.
 #[repr(C)]
 pub struct SEALContext {
-    _private: [u8; 0],
+    _private: [u8; 0], 
 }
 
 #[repr(C)]
@@ -40,16 +44,15 @@ pub struct SEALGaloisKeys {
     _private: [u8; 0],
 }
 
-// ============================================
 // FFI Function Declarations
-// ============================================
 unsafe extern "C" {
-    // Context management
+    // Context management - Initialize the encryption environment
+    // Creates a new encryption context, which is the “foundation” of all SEAL operations.
     pub fn seal_create_context(
-        poly_modulus_degree: c_ulonglong,
-        coeff_modulus: *const c_ulonglong,
-        coeff_modulus_size: usize,
-        plain_modulus: c_ulonglong,
+        poly_modulus_degree: c_ulonglong, // The encryption scheme parameters
+        coeff_modulus: *const c_ulonglong, // Polynomial degrees
+        coeff_modulus_size: usize, // Modulus sizes
+        plain_modulus: c_ulonglong, // Internal structures used for key generation and encryption
     ) -> *mut SEALContext;
     
     pub fn seal_destroy_context(ctx: *mut SEALContext);
@@ -117,7 +120,7 @@ unsafe extern "C" {
         values: *const i64,
         values_size: usize,
     ) -> *mut SEALPlaintext;
-    pub fn seal_batch_decode(
+    pub unsafe fn seal_batch_decode(
         encoder: *mut SEALBatchEncoder,
         plain: *mut SEALPlaintext,
         output: *mut i64,
