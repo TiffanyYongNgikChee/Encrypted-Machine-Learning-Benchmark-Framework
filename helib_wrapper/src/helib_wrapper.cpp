@@ -187,3 +187,91 @@ extern "C" HElibPlaintext* helib_decrypt(
 extern "C" void helib_destroy_ciphertext(HElibCiphertext* cipher) {
     if (cipher) delete cipher;
 }
+
+// Homomorphic Operations Implementation
+extern "C" HElibCiphertext* helib_add(
+    HElibCiphertext* a,
+    HElibCiphertext* b
+) {
+    try {
+        if (!a || !a->ctxt || !b || !b->ctxt) return nullptr;
+        
+        HElibCiphertext* result = new HElibCiphertext();
+        
+        // Copy first ciphertext
+        result->ctxt = make_unique<Ctxt>(*a->ctxt);
+        
+        // Add second ciphertext
+        *result->ctxt += *b->ctxt;
+        
+        return result;
+        
+    } catch (const exception& e) {
+        cerr << "Addition failed: " << e.what() << endl;
+        return nullptr;
+    }
+}
+
+extern "C" HElibCiphertext* helib_multiply(
+    HElibCiphertext* a,
+    HElibCiphertext* b
+) {
+    try {
+        if (!a || !a->ctxt || !b || !b->ctxt) return nullptr;
+        
+        HElibCiphertext* result = new HElibCiphertext();
+        
+        // Copy first ciphertext
+        result->ctxt = make_unique<Ctxt>(*a->ctxt);
+        
+        // Multiply by second ciphertext
+        *result->ctxt *= *b->ctxt;
+        
+        return result;
+        
+    } catch (const exception& e) {
+        cerr << "Multiplication failed: " << e.what() << endl;
+        return nullptr;
+    }
+}
+
+extern "C" HElibCiphertext* helib_subtract(
+    HElibCiphertext* a,
+    HElibCiphertext* b
+) {
+    try {
+        if (!a || !a->ctxt || !b || !b->ctxt) return nullptr;
+        
+        HElibCiphertext* result = new HElibCiphertext();
+        
+        // Copy first ciphertext
+        result->ctxt = make_unique<Ctxt>(*a->ctxt);
+        
+        // Subtract second ciphertext
+        *result->ctxt -= *b->ctxt;
+        
+        return result;
+        
+    } catch (const exception& e) {
+        cerr << "Subtraction failed: " << e.what() << endl;
+        return nullptr;
+    }
+}
+
+// Utility Functions Implementation
+extern "C" int helib_noise_budget(
+    HElibSecretKey* sk,
+    HElibCiphertext* cipher
+) {
+    try {
+        if (!sk || !sk->secretKey || !cipher || !cipher->ctxt) {
+            return -1;
+        }
+        
+        // Get capacity (similar to SEAL's noise budget)
+        return cipher->ctxt->capacity();
+        
+    } catch (...) {
+        return -1;
+    }
+}
