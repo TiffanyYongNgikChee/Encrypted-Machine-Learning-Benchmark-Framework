@@ -12,11 +12,3 @@ cc = "1.0"
 [lib]
 name = "he_benchmark"
 path = "src/lib.rs"
-
-[[example]]
-name = "basic_encryption"
-path = "examples/basic_encryption.rs"
-
-[[example]]
-name = "performance_test"
-path = "examples/performance_test.rs"

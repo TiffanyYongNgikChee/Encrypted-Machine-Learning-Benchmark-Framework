@@ -29,7 +29,7 @@ pub struct HElibPlaintext {
 }
 
 // FFI Function Declarations
-extern "C" {
+unsafe extern "C" {
     // Context management
     pub fn helib_create_context(
         m: std::os::raw::c_ulong,

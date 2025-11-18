@@ -3,6 +3,8 @@
 //! This module provides a safe, idiomatic Rust interface to Microsoft SEAL.
 
 mod bindings; // imports the low-level FFI bindings (the C function definitions) that connect to C++ wrapper
+mod helib_bindings;     // HElib FFI bindings
+pub mod helib;          // HElib safe wrapper 
 
 use std::ffi::{CStr, CString}; // CStr and CString convert between Rust strings and C strings.
 use std::ptr::NonNull; // NonNull safely wraps raw pointers that should never be null.
@@ -411,3 +413,8 @@ pub fn multiply(context: &Context, a: &Ciphertext, b: &Ciphertext) -> Result<Cip
         .map(|ptr| Ciphertext { ptr })
         .ok_or(SealError::OperationFailed)
 }
+// Re-export HElib types with prefix
+pub use helib::{
+    HEContext, HESecretKey, HEPublicKey, 
+    HEPlaintext, HECiphertext
+};

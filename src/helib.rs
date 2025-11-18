@@ -7,10 +7,27 @@ use std::ptr::NonNull;
 #[derive(Debug)]
 pub enum HElibError {
     NullPointer,
+    InvalidParameter,
     EncryptionFailed,
     DecryptionFailed,
     OperationFailed,
 }
+
+// Implement Display for HElibError
+impl std::fmt::Display for HElibError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HElibError::NullPointer => write!(f, "Null pointer returned from HElib"),
+            HElibError::InvalidParameter => write!(f, "Invalid parameter provided"),
+            HElibError::EncryptionFailed => write!(f, "Encryption operation failed"),
+            HElibError::DecryptionFailed => write!(f, "Decryption operation failed"),
+            HElibError::OperationFailed => write!(f, "HElib operation failed"),
+        }
+    }
+}
+
+// Implement Error trait for HElibError
+impl std::error::Error for HElibError {}
 
 pub type Result<T> = std::result::Result<T, HElibError>;
 
