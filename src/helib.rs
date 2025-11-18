@@ -129,3 +129,94 @@ impl Drop for HEPublicKey {
         }
     }
 }
+
+// Plaintext
+pub struct HEPlaintext {
+    ptr: NonNull<helib_bindings::HElibPlaintext>,
+}
+
+impl HEPlaintext {
+    pub fn new(context: &HEContext, value: i64) -> Result<Self> {
+        let ptr = unsafe {
+            helib_bindings::helib_create_plaintext(
+                context.ptr.as_ptr(),
+                value,
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| HEPlaintext { ptr })
+            .ok_or(HElibError::NullPointer)
+    }
+    
+    pub fn value(&self) -> i64 {
+        unsafe {
+            helib_bindings::helib_plaintext_to_long(self.ptr.as_ptr())
+        }
+    }
+}
+
+impl Drop for HEPlaintext {
+    fn drop(&mut self) {
+        unsafe {
+            helib_bindings::helib_destroy_plaintext(self.ptr.as_ptr());
+        }
+    }
+}
+
+// Ciphertext
+pub struct HECiphertext {
+    ptr: NonNull<helib_bindings::HElibCiphertext>,
+}
+
+impl HECiphertext {
+    /// Homomorphic addition
+    pub fn add(&self, other: &HECiphertext) -> Result<HECiphertext> {
+        let ptr = unsafe {
+            helib_bindings::helib_add(
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| HECiphertext { ptr })
+            .ok_or(HElibError::OperationFailed)
+    }
+    
+    /// Homomorphic multiplication
+    pub fn multiply(&self, other: &HECiphertext) -> Result<HECiphertext> {
+        let ptr = unsafe {
+            helib_bindings::helib_multiply(
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| HECiphertext { ptr })
+            .ok_or(HElibError::OperationFailed)
+    }
+    
+    /// Homomorphic subtraction
+    pub fn subtract(&self, other: &HECiphertext) -> Result<HECiphertext> {
+        let ptr = unsafe {
+            helib_bindings::helib_subtract(
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| HECiphertext { ptr })
+            .ok_or(HElibError::OperationFailed)
+    }
+}
+
+impl Drop for HECiphertext {
+    fn drop(&mut self) {
+        unsafe {
+            helib_bindings::helib_destroy_ciphertext(self.ptr.as_ptr());
+        }
+    }
+}
