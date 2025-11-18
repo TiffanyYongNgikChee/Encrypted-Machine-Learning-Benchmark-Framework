@@ -5,16 +5,12 @@ fn main() {
     println!("cargo:rustc-link-search=native=cpp_wrapper/build");
     println!("cargo:rustc-link-lib=dylib=seal_wrapper");
     
-    // Link to SEAL static library
+    // Link to SEAL library
     println!("cargo:rustc-link-search=native=/usr/local/lib");
-    println!("cargo:rustc-link-lib=static=seal-4.1");  // Changed to static!
+    println!("cargo:rustc-link-lib=dylib=seal-4.1");
     
-    // Link C++ standard library (needed for static linking)
-    println!("cargo:rustc-link-lib=c++");
-    
-    // Add rpath for wrapper library
-    println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path");
-    println!("cargo:rustc-link-arg=-Wl,-rpath,cpp_wrapper/build");
+    // Link C++ standard library
+    println!("cargo:rustc-link-lib=stdc++");
     
     // Rerun if wrapper changes
     println!("cargo:rerun-if-changed=cpp_wrapper/src/seal_wrapper.cpp");
