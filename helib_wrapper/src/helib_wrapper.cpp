@@ -38,25 +38,24 @@ extern "C" HElibContext* helib_create_context(
     unsigned long r
 ) {
     try {
-        // Create context builder
-        auto contextBuilder = ContextBuilder<BGV>()
-            .m(m)           // Cyclotomic polynomial
-            .p(p)           // Plaintext modulus
-            .r(r)           // Lifting
-            .bits(300)      // Bit precision
-            .c(2);          // Columns in key-switching matrix
-        
-        // Build context
-        auto context = contextBuilder.build();
-        
-        // Wrap in our struct
         HElibContext* result = new HElibContext();
-        result->context = make_unique<Context>(move(context));
+        
+        // Use reset() to take ownership of raw pointer
+        result->context.reset(
+            ContextBuilder<BGV>()
+                .m(m)
+                .p(p)
+                .r(r)
+                .bits(300)
+                .c(2)
+                .buildModChain(true)
+                .buildPtr()
+        );
         
         return result;
         
     } catch (const exception& e) {
-        cerr << "HElib context creation failed: " << e.what() << endl;
+        cerr << "Context creation failed: " << e.what() << endl;
         return nullptr;
     }
 }

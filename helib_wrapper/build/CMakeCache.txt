@@ -213,7 +213,7 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 GMP_LIB:FILEPATH=/usr/lib/aarch64-linux-gnu/libgmp.so
 
 //Path to a library.
-NTL_LIB:FILEPATH=/usr/local/lib/libntl.a
+NTL_LIB:FILEPATH=/usr/local/lib/libntl.so
 
 //The directory containing a CMake configuration file for helib.
 helib_DIR:PATH=/usr/local/share/cmake/helib

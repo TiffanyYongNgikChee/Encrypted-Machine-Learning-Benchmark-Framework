@@ -93,6 +93,8 @@ helib_wrapper_EXTERNAL_OBJECTS =
 libhelib_wrapper.so: CMakeFiles/helib_wrapper.dir/src/helib_wrapper.cpp.o
 libhelib_wrapper.so: CMakeFiles/helib_wrapper.dir/build.make
 libhelib_wrapper.so: /usr/local/lib/libhelib.a
+libhelib_wrapper.so: /usr/local/lib/libntl.so
+libhelib_wrapper.so: /usr/lib/aarch64-linux-gnu/libgmp.so
 libhelib_wrapper.so: /usr/local/lib/libntl.a
 libhelib_wrapper.so: /usr/lib/aarch64-linux-gnu/libgmp.so
 libhelib_wrapper.so: CMakeFiles/helib_wrapper.dir/link.txt
