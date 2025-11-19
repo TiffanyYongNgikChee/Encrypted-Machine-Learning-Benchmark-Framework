@@ -251,3 +251,98 @@ fn run_seal_encryption(medical_data: &[i64]) -> Result<PhaseMetrics, Box<dyn std
     
     Ok(metrics)
 }
+
+// HElib Encryption Process
+// This function benchmarks a full encryption workflow using the HElib backend.
+// It measures performance across setup, encoding, encryption, homomorphic
+// computation, and decryption, storing results in a PhaseMetrics structure.
+fn run_helib_encryption(medical_data: &[i64]) -> Result<PhaseMetrics, Box<dyn std::error::Error>> {
+    // Initialize metric tracker and start global runtime timer
+    let mut metrics = PhaseMetrics::new();
+    let total_start = Instant::now();
+    
+    print_section(" HElib Encryption Process");
+    
+    // Phase 1: Setup
+    // Initializes the HElib cryptographic environment and generates keys.
+    println!("\n Phase 1: HElib Setup & Key Generation");
+    let setup_start = Instant::now();
+    
+    // Create HElib context (defines parameters like modulus and ring structure)
+    processing_step("Creating HElib context (m: 8191, p: 2, r: 1)", 700);
+    let context = HEContext::new(8191, 2, 1)?;
+    
+    // Generate the secret key (also used to derive public key)
+    processing_step("Generating HElib secret key", 900);
+    let secret_key = HESecretKey::generate(&context)?;
+    
+    // Extract the public key used for encrypting plaintexts
+    processing_step("Extracting HElib public key", 400);
+    let public_key = secret_key.public_key()?;
+    
+    metrics.setup_time = setup_start.elapsed();
+    println!("   Setup complete: {:.2}s", metrics.setup_time.as_secs_f64());
+    
+    // Phase 2: Encoding (HElib handles single values)
+    // HElib generally handles values one-by-one (no batching),
+    // so we encode the first data element and a constant for the operation.
+    println!("\n Phase 2: HElib Data Encoding");
+    let encode_start = Instant::now();
+    
+    processing_step("Encoding first value", 300);
+    // For simplicity, encode first character as demo
+    let first_value = medical_data.first().copied().unwrap_or(0);
+    let plaintext1 = HEPlaintext::new(&context, first_value)?;
+    
+    // Encode the first medical data value as the primary plaintext
+    processing_step("Encoding second value for operation", 300);
+    let plaintext2 = HEPlaintext::new(&context, 1)?;
+    
+    // Encode a second plaintext (value = 1) for homomorphic addition
+    metrics.encoding_time = encode_start.elapsed();
+    println!("   Encoding complete: {:.2}s", metrics.encoding_time.as_secs_f64());
+    
+    // Phase 3: Encryption
+    // Encrypt the encoded plaintexts using the public key.
+    println!("\n Phase 3: HElib Encryption");
+    let encrypt_start = Instant::now();
+    
+    // Encrypt original value
+    processing_step("Encrypting first value", 800);
+    let ciphertext1 = public_key.encrypt(&plaintext1)?;
+    
+    // Encrypt the constant '1'
+    processing_step("Encrypting second value", 800);
+    let ciphertext2 = public_key.encrypt(&plaintext2)?;
+    
+    metrics.encryption_time = encrypt_start.elapsed();
+    println!("    Encryption complete: {:.2}s", metrics.encryption_time.as_secs_f64());
+    
+    // Phase 4: Homomorphic Operation
+    // Performs homomorphic addition: ciphertext1 + ciphertext2.
+    println!("\n Phase 4: HElib Encrypted Operations");
+    let op_start = Instant::now();
+    
+    processing_step("Performing encrypted addition", 600);
+    let result_cipher = ciphertext1.add(&ciphertext2)?;
+    
+    metrics.operation_time = op_start.elapsed();
+    println!("    Operation complete: {:.2}s", metrics.operation_time.as_secs_f64());
+    
+    // Phase 5: Decryption
+    // Decrypts the resulting ciphertext using the secret key.
+    println!("\n Phase 5: HElib Decryption");
+    let decrypt_start = Instant::now();
+    
+    processing_step("Decrypting result", 700);
+    let decrypted = secret_key.decrypt(&result_cipher)?;
+    
+    metrics.decryption_time = decrypt_start.elapsed();
+    println!("    Decryption complete: {:.2}s", metrics.decryption_time.as_secs_f64());
+    println!("   Decrypted plaintext obtained");
+    
+    // Record total runtime across all phases
+    metrics.total_time = total_start.elapsed();
+    
+    Ok(metrics)
+}
