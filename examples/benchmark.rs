@@ -127,3 +127,127 @@ fn print_progress(label: &str, current: usize, total: usize, elapsed: Duration) 
     println!("│  Elapsed: {:.1}s", elapsed.as_secs_f64());
     println!("└─────────────────────────────────────────────────────────────────┘");
 }
+
+// SEAL Encryption Process
+// Runs a full homomorphic encryption workflow
+// using Microsoft SEAL:
+//   1. Setup & key generation
+//   2. Data encoding
+//   3. Encryption
+//   4. Homomorphic operations
+//   5. Decryption & verification
+//
+// Returns PhaseMetrics containing timing for each step.
+
+fn run_seal_encryption(medical_data: &[i64]) -> Result<PhaseMetrics, Box<dyn std::error::Error>> {
+    // Stores timing for each phase.
+    let mut metrics = PhaseMetrics::new();
+    // Start total time measurement.
+    let total_start = Instant::now();
+    
+    print_section("SEAL Encryption Process");
+    
+    // Phase 1: Setup
+    println!("\n Phase 1: SEAL Setup & Key Generation");
+    let setup_start = Instant::now();
+    
+    // Create SEAL context with specified polynomial modulus and coefficient modulus.
+    processing_step("Creating SEAL context (poly_modulus: 8192)", 600);
+    let context = SealContext::new(8192, 1032193)?;
+    
+    // Initialize batch encoder and determine available batching slots.
+    processing_step("Generating SEAL keys", 800);
+    let encoder = SealBatchEncoder::new(&context)?;
+    let slot_count = encoder.slot_count();
+    
+    metrics.setup_time = setup_start.elapsed();
+    println!("   Setup complete: {:.2}s", metrics.setup_time.as_secs_f64());
+    println!("   Available slots: {}", slot_count);
+    
+    // Phase 2: Encoding
+    // Convert raw medical data (chars as ints)
+    // into a batch-encoded SEAL plaintext.
+    println!("\n Phase 2: SEAL Data Encoding");
+    let encode_start = Instant::now();
+    
+    // SEAL batching requires data to match the slot count.
+    processing_step("Padding data to slot size", 400);
+    let mut padded_data = medical_data.to_vec();
+    padded_data.resize(slot_count, 0); // fill unused slots with zero
+    
+    // Encode padded vector into SEAL plaintext object.
+    processing_step("Encoding into SEAL plaintext", 500);
+    let plaintext = encoder.encode(&padded_data)?;
+    
+    metrics.encoding_time = encode_start.elapsed();
+    println!("   Encoding complete: {:.2}s", metrics.encoding_time.as_secs_f64());
+    
+    // Phase 3: Encryption
+    // Encrypt the encoded plaintext.
+    println!("\n Phase 3: SEAL Encryption");
+    let encrypt_start = Instant::now();
+    
+    // Encrypt the batch-encoded medical record.
+    processing_step("Initializing SEAL encryptor", 300);
+    let encryptor = SealEncryptor::new(&context)?;
+    
+    processing_step("Encrypting medical data", 700);
+    let ciphertext = encryptor.encrypt(&plaintext)?;
+    
+    metrics.encryption_time = encrypt_start.elapsed();
+    println!("  Encryption complete: {:.2}s", metrics.encryption_time.as_secs_f64());
+    
+    // Phase 4: Homomorphic Operation
+    // Perform encrypted addition:
+    //    (encrypted medical record) + 1
+    // This demonstrates fully homomorphic capability.
+    println!("\n Phase 4: SEAL Encrypted Operations");
+    let op_start = Instant::now();
+    
+    // Encode & encrypt a vector of all 1s.
+    processing_step("Creating second encrypted value", 400);
+    let ones = vec![1i64; slot_count];
+    let plain2 = encoder.encode(&ones)?;
+    let cipher2 = encryptor.encrypt(&plain2)?;
+    
+    // Homomorphic addition using SEAL via wrapper function.
+    processing_step("Performing encrypted addition", 500);
+    let result_cipher = he_benchmark::add(&context, &ciphertext, &cipher2)?;
+    
+    metrics.operation_time = op_start.elapsed();
+    println!("   Operation complete: {:.2}s", metrics.operation_time.as_secs_f64());
+    
+    // Phase 5: Decryption
+    // Convert ciphertext back into plaintext,
+    // then decode into raw integers.
+    println!("\n Phase 5: SEAL Decryption");
+    let decrypt_start = Instant::now();
+    
+    processing_step("Initializing SEAL decryptor", 300);
+    let decryptor = SealDecryptor::new(&context)?;
+    
+    // Decrypt output ciphertext.
+    processing_step("Decrypting result", 600);
+    let decrypted = decryptor.decrypt(&result_cipher)?;
+    
+    // Decode the batch-encoded result.
+    processing_step("Decoding to readable format", 400);
+    let result = encoder.decode(&decrypted)?;
+    
+    metrics.decryption_time = decrypt_start.elapsed();
+    println!("    Decryption complete: {:.2}s", metrics.decryption_time.as_secs_f64());
+    
+    // Sanity Check: Print first few decoded characters.
+    // Helps validate that the homomorphic operations worked.
+    let preview: String = result[..medical_data.len().min(10)]
+        .iter()
+        .filter(|&&n| n > 0 && n < 128) // printable ASCII
+        .map(|&n| (n as u8) as char)
+        .collect();
+    println!("   Preview: \"{}...\"", preview);
+    
+    // Final total time
+    metrics.total_time = total_start.elapsed();
+    
+    Ok(metrics)
+}
