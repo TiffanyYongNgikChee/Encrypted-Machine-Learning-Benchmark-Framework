@@ -441,3 +441,61 @@ fn print_comparison_row(phase: &str, seal_time: Duration, helib_time: Duration) 
         phase, seal_ms, helib_ms, winner
     );
 }
+
+// Main Function
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    clear_screen();
+    
+    print_header("MEDICAL DATA ENCRYPTION COMPARISON");
+    
+    println!("This example encrypts the same medical record using both");
+    println!("SEAL and HElib frameworks, then compares their performance.\n");
+    
+    sleep(Duration::from_secs(2));
+    
+    // Medical Record
+    let medical_record = 
+        "PATIENT ID: 12345 | NAME: Bob Smith | AGE: 45 | DIAGNOSIS: HYPERTENSION STAGE 2 | BP: 160/100 | MEDICATION: LISINOPRIL 10MG DAILY | ALLERGIES: EGG | LAST VISIT: 2024-11-10 | NOTES: PATIENT SHOWS IMPROVEMENT WITH CURRENT TREATMENT";
+    
+    println!(" Medical Record:");
+    println!("─────────────────────────────────────────────────────────────────");
+    println!("{}", medical_record);
+    println!("─────────────────────────────────────────────────────────────────\n");
+    
+    // Convert to numeric data
+    let medical_data: Vec<i64> = medical_record.chars().map(|c| c as i64).collect();
+    println!(" Data size: {} characters\n", medical_data.len());
+    
+    sleep(Duration::from_secs(1));
+    
+    // Run SEAL
+    println!("\n{}", "=".repeat(70));
+    println!("🔷 Testing with SEAL Framework");
+    println!("{}", "=".repeat(70));
+    let seal_metrics = run_seal_encryption(&medical_data)?;
+    
+    sleep(Duration::from_secs(2));
+    
+    // Run HElib
+    println!("\n{}", "=".repeat(70));
+    println!(" Testing with HElib Framework");
+    println!("{}", "=".repeat(70));
+    let helib_metrics = run_helib_encryption(&medical_data)?;
+    
+    sleep(Duration::from_secs(2));
+    
+    // Display comparison
+    let comparison = ComparisonResult {
+        seal: seal_metrics,
+        helib: helib_metrics,
+        data_description: format!("{} character medical record", medical_data.len()),
+    };
+    
+    print_comparison(&comparison);
+    
+    println!(" Comparison complete!\n");
+    
+    Ok(())
+}
+
