@@ -445,16 +445,21 @@ fn print_comparison_row(phase: &str, seal_time: Duration, helib_time: Duration) 
 // Main Function
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Clears the terminal to give a clean display for the demo
     clear_screen();
     
+    // Prints a formatted title/banner for the program
     print_header("MEDICAL DATA ENCRYPTION COMPARISON");
     
     println!("This example encrypts the same medical record using both");
     println!("SEAL and HElib frameworks, then compares their performance.\n");
-    
+
     sleep(Duration::from_secs(2));
     
-    // Medical Record
+    // DEFINE data
+    // This is the plaintext data that will be encrypted with SEAL
+    // and HElib. The demo uses a human-readable medical record to
+    // emphasize privacy-preserving computation on sensitive data.
     let medical_record = 
         "PATIENT ID: 12345 | NAME: Bob Smith | AGE: 45 | DIAGNOSIS: HYPERTENSION STAGE 2 | BP: 160/100 | MEDICATION: LISINOPRIL 10MG DAILY | ALLERGIES: EGG | LAST VISIT: 2024-11-10 | NOTES: PATIENT SHOWS IMPROVEMENT WITH CURRENT TREATMENT";
     
@@ -463,13 +468,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", medical_record);
     println!("─────────────────────────────────────────────────────────────────\n");
     
-    // Convert to numeric data
+    // CONVERT RECORD TO NUMERIC FORM
+    // Most homomorphic encryption libraries operate on integers,
+    // not text. Here, each character of the medical record string
+    // is converted to its ASCII numeric value.
     let medical_data: Vec<i64> = medical_record.chars().map(|c| c as i64).collect();
     println!(" Data size: {} characters\n", medical_data.len());
     
     sleep(Duration::from_secs(1));
     
-    // Run SEAL
+    // RUN SEAL ENCRYPTION
+    // Calls a helper function that:
+    //  - sets up SEAL parameters
+    //  - encrypts the numeric data
+    //  - optionally performs operations
+    //  - returns timing and performance metrics
     println!("\n{}", "=".repeat(70));
     println!("🔷 Testing with SEAL Framework");
     println!("{}", "=".repeat(70));
@@ -477,7 +490,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     sleep(Duration::from_secs(2));
     
-    // Run HElib
+    // RUN HElib ENCRYPTION
+    // Same process as SEAL, but using the HElib library to allow
+    // an apples-to-apples comparison for the same dataset.
     println!("\n{}", "=".repeat(70));
     println!(" Testing with HElib Framework");
     println!("{}", "=".repeat(70));
@@ -485,7 +500,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     sleep(Duration::from_secs(2));
     
-    // Display comparison
+    // BUILD AND DISPLAY COMPARISON TABLE
+    // Wraps the metrics into a shared structure, then formats them
+    // for printing (e.g., encryption time, memory usage, ciphertext size).
     let comparison = ComparisonResult {
         seal: seal_metrics,
         helib: helib_metrics,
