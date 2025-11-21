@@ -11,17 +11,20 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
+      # Get the code
       - name: Checkout code
         uses: actions/checkout@v4
-      
+      # Install system dependencies required by SEAL and HElib
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake g++ libntl-dev libgmp-dev git
-      
+      # Setup Rust toolchain
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
       
+      # Build Microsoft SEAL library from source
+      # Version 4.1.1 is required for compatibility with our C++ wrapper
       - name: Build SEAL library
         run: |
           cd /tmp
@@ -32,6 +35,8 @@ jobs:
           sudo cmake --install build
           sudo ldconfig
       
+      # Build HElib library from source
+      # Version 2.3.0 is the latest stable release
       - name: Build HElib library
         run: |
           cd /tmp
@@ -43,30 +48,35 @@ jobs:
           sudo make install
           sudo ldconfig
 
+      # Clean any stale CMake cache files from dev container
+      # This prevents path conflicts between local dev and CI environments
       - name: Clean build directories
         run: |
           rm -rf cpp_wrapper/build
           rm -rf helib_wrapper/build
-      
+      # Build our SEAL C++ wrapper
       - name: Build SEAL wrapper
         run: |
           cd cpp_wrapper
           mkdir -p build && cd build
           cmake ..
           make -j$(nproc)
-      
+      # Build our HElib C++ wrapper
       - name: Build HElib wrapper
         run: |
           cd helib_wrapper
           mkdir -p build && cd build
           cmake ..
           make -j$(nproc)
-          
+
+      # Build the Rust project
+      # LD_LIBRARY_PATH is required for dynamic linking to our C++ wrappers
       - name: Build Rust project
         run: |
           export LD_LIBRARY_PATH="$PWD/cpp_wrapper/build:$PWD/helib_wrapper/build:/usr/local/lib"
           cargo build --verbose
-      
+      # Run Rust tests
+      # continue-on-error allows workflow to pass even if tests fail
       - name: Run tests
         run: |
           export LD_LIBRARY_PATH="$PWD/cpp_wrapper/build:$PWD/helib_wrapper/build:/usr/local/lib"
