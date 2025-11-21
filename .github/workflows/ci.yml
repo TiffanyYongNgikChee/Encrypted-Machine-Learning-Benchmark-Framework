@@ -42,12 +42,26 @@ jobs:
           make -j$(nproc)
           sudo make install
           sudo ldconfig
-      
-      - name: Build C++ wrappers
+
+      - name: Clean build directories
         run: |
-          cd cpp_wrapper && mkdir -p build && cd build && cmake .. && make -j$(nproc)
-          cd ../../helib_wrapper && mkdir -p build && cd build && cmake .. && make -j$(nproc)
+          rm -rf cpp_wrapper/build
+          rm -rf helib_wrapper/build
       
+      - name: Build SEAL wrapper
+        run: |
+          cd cpp_wrapper
+          mkdir -p build && cd build
+          cmake ..
+          make -j$(nproc)
+      
+      - name: Build HElib wrapper
+        run: |
+          cd helib_wrapper
+          mkdir -p build && cd build
+          cmake ..
+          make -j$(nproc)
+          
       - name: Build Rust project
         run: |
           export LD_LIBRARY_PATH="$PWD/cpp_wrapper/build:$PWD/helib_wrapper/build:/usr/local/lib"

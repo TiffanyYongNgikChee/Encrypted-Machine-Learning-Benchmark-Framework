@@ -5,6 +5,9 @@ Cargo.lock
 
 # C++
 cpp_wrapper/build/
+helib_wrapper/build/
+**/CMakeCache.txt
+**/CMakeFiles/
 *.dylib
 *.so
 *.o
