@@ -91,8 +91,50 @@ OpenFHEPlaintext* openfhe_decrypt(
 /// Destroy ciphertext and free memory
 void openfhe_destroy_ciphertext(OpenFHECiphertext* cipher);
 
+// Homomorphic Operations
+/// Add two ciphertexts
+/// @param ctx: OpenFHE context
+/// @param a: First ciphertext
+/// @param b: Second ciphertext
+/// @return Pointer to result ciphertext or NULL on failure
+OpenFHECiphertext* openfhe_add(
+    OpenFHEContext* ctx,
+    OpenFHECiphertext* a,
+    OpenFHECiphertext* b
+);
+
+/// Multiply two ciphertexts
+/// @param ctx: OpenFHE context
+/// @param keypair: Key pair (for relinearization)
+/// @param a: First ciphertext
+/// @param b: Second ciphertext
+/// @return Pointer to result ciphertext or NULL on failure
+OpenFHECiphertext* openfhe_multiply(
+    OpenFHEContext* ctx,
+    OpenFHEKeyPair* keypair,
+    OpenFHECiphertext* a,
+    OpenFHECiphertext* b
+);
+
+/// Subtract two ciphertexts
+/// @param ctx: OpenFHE context
+/// @param a: First ciphertext
+/// @param b: Second ciphertext
+/// @return Pointer to result ciphertext or NULL on failure
+OpenFHECiphertext* openfhe_subtract(
+    OpenFHEContext* ctx,
+    OpenFHECiphertext* a,
+    OpenFHECiphertext* b
+);
+
+// Error Handling
+/// Get last error message
+/// @return Error message string (valid until next call)
+const char* openfhe_get_last_error();
+
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif // OPENFHE_WRAPPER_H
+#endif
