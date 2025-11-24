@@ -28,6 +28,16 @@ OpenFHEContext* openfhe_create_bfv_context(
 /// Destroy context and free memory
 void openfhe_destroy_context(OpenFHEContext* ctx);
 
+// Key Management
+/// Generate public/private key pair
+/// @param ctx: OpenFHE context
+/// @return Pointer to key pair or NULL on failure
+OpenFHEKeyPair* openfhe_generate_keypair(OpenFHEContext* ctx);
+
+/// Destroy key pair and free memory
+void openfhe_destroy_keypair(OpenFHEKeyPair* keypair);
+
+
 #ifdef __cplusplus
 }
 #endif
