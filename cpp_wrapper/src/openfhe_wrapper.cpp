@@ -8,6 +8,8 @@
 #include "openfhe/pke/openfhe.h"
 #include "openfhe/pke/scheme/bfvrns/gen-cryptocontext-bfvrns-params.h"
 #include "openfhe/pke/scheme/bfvrns/gen-cryptocontext-bfvrns.h"
+#include "openfhe/pke/encoding/plaintext.h"  
+#include "openfhe/pke/ciphertext.h"                  
 
 // Standard headers
 #include <string>
@@ -115,5 +117,73 @@ extern "C" OpenFHEKeyPair* openfhe_generate_keypair(OpenFHEContext* ctx) {
 extern "C" void openfhe_destroy_keypair(OpenFHEKeyPair* keypair) {
     if (keypair) {
         delete keypair;
+    }
+}
+
+// Plaintext Operations Implementation
+// ============================================
+
+extern "C" OpenFHEPlaintext* openfhe_create_plaintext(
+    OpenFHEContext* ctx,
+    const int64_t* values,
+    size_t length
+) {
+    if (!ctx || !values) {
+        set_error("Invalid parameters");
+        return nullptr;
+    }
+    
+    try {
+        // Convert to vector
+        std::vector<int64_t> vec(values, values + length);
+        
+        // Create packed plaintext
+        Plaintext plaintext = ctx->cryptoContext->MakePackedPlaintext(vec);
+        
+        // Allocate and return
+        OpenFHEPlaintext* plain = new OpenFHEPlaintext();
+        plain->plaintext = plaintext;
+        
+        set_error("");
+        return plain;
+        
+    } catch (const std::exception& e) {
+        set_error(std::string("Failed to create plaintext: ") + e.what());
+        return nullptr;
+    }
+}
+
+extern "C" void openfhe_destroy_plaintext(OpenFHEPlaintext* plain) {
+    if (plain) {
+        delete plain;
+    }
+}
+
+extern "C" bool openfhe_get_plaintext_values(
+    OpenFHEPlaintext* plain,
+    int64_t* out_values,
+    size_t* out_length
+) {
+    if (!plain || !out_values || !out_length) {
+        set_error("Invalid parameters");
+        return false;
+    }
+    
+    try {
+        // plain->plaintext is already a Plaintext (shared_ptr)
+        // Just call GetPackedValue() directly
+        const std::vector<int64_t>& vec = plain->plaintext->GetPackedValue();
+        
+        // Copy to output buffer
+        size_t copy_length = std::min(*out_length, vec.size());
+        std::memcpy(out_values, vec.data(), copy_length * sizeof(int64_t));
+        *out_length = copy_length;
+        
+        set_error("");
+        return true;
+        
+    } catch (const std::exception& e) {
+        set_error(std::string("Failed to get plaintext values: ") + e.what());
+        return false;
     }
 }
