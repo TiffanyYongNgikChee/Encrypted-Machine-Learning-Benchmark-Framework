@@ -121,8 +121,6 @@ extern "C" void openfhe_destroy_keypair(OpenFHEKeyPair* keypair) {
 }
 
 // Plaintext Operations Implementation
-// ============================================
-
 extern "C" OpenFHEPlaintext* openfhe_create_plaintext(
     OpenFHEContext* ctx,
     const int64_t* values,
@@ -185,5 +183,74 @@ extern "C" bool openfhe_get_plaintext_values(
     } catch (const std::exception& e) {
         set_error(std::string("Failed to get plaintext values: ") + e.what());
         return false;
+    }
+}
+
+// Encryption/Decryption Implementation
+extern "C" OpenFHECiphertext* openfhe_encrypt(
+    OpenFHEContext* ctx,
+    OpenFHEKeyPair* keypair,
+    OpenFHEPlaintext* plain
+) {
+    if (!ctx || !keypair || !plain) {
+        set_error("Invalid parameters");
+        return nullptr;
+    }
+    
+    try {
+        // Encrypt using public key
+        auto ciphertext = ctx->cryptoContext->Encrypt(
+            keypair->keyPair.publicKey,
+            plain->plaintext
+        );
+        
+        // Allocate and return
+        OpenFHECiphertext* cipher = new OpenFHECiphertext();
+        cipher->ciphertext = ciphertext;
+        
+        set_error("");
+        return cipher;
+        
+    } catch (const std::exception& e) {
+        set_error(std::string("Encryption failed: ") + e.what());
+        return nullptr;
+    }
+}
+
+extern "C" OpenFHEPlaintext* openfhe_decrypt(
+    OpenFHEContext* ctx,
+    OpenFHEKeyPair* keypair,
+    OpenFHECiphertext* cipher
+) {
+    if (!ctx || !keypair || !cipher) {
+        set_error("Invalid parameters");
+        return nullptr;
+    }
+    
+    try {
+        // Decrypt using secret key
+        Plaintext result;
+        ctx->cryptoContext->Decrypt(
+            keypair->keyPair.secretKey,
+            cipher->ciphertext,
+            &result
+        );
+        
+        // Allocate and return
+        OpenFHEPlaintext* plain = new OpenFHEPlaintext();
+        plain->plaintext = result;
+        
+        set_error("");
+        return plain;
+        
+    } catch (const std::exception& e) {
+        set_error(std::string("Decryption failed: ") + e.what());
+        return nullptr;
+    }
+}
+
+extern "C" void openfhe_destroy_ciphertext(OpenFHECiphertext* cipher) {
+    if (cipher) {
+        delete cipher;
     }
 }
