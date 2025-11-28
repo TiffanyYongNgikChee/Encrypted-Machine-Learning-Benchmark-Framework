@@ -1,38 +1,61 @@
-// build.rs - Tells Cargo how to link C++ library (macOS version)
+// build.rs - Cross-platform C++ library linking
 
 fn main() {
-    // ============================================
-    // SEAL Wrapper Linking
-    // ============================================
-    println!("cargo:rustc-link-search=native=cpp_wrapper/build");
-    println!("cargo:rustc-link-lib=dylib=seal_wrapper");
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     
-    println!("cargo:rustc-link-search=native=/usr/local/lib");
-    println!("cargo:rustc-link-lib=dylib=seal-4.1");
-    
-    // ============================================
-    // HElib Wrapper Linking
-    // ============================================
-    println!("cargo:rustc-link-search=native=helib_wrapper/build");
-    println!("cargo:rustc-link-lib=dylib=helib_wrapper");
-    
-    // HElib libraries (from package build)
-    println!("cargo:rustc-link-search=native=/usr/local/helib_pack/lib");
-    println!("cargo:rustc-link-lib=dylib=helib");
-    println!("cargo:rustc-link-lib=dylib=ntl");
-    println!("cargo:rustc-link-lib=dylib=gmp");
+    if target_os == "macos" {
+        // ============================================
+        // macOS Configuration
+        // ============================================
+        println!("cargo:rustc-link-search=native=cpp_wrapper/build");
+        println!("cargo:rustc-link-lib=dylib=seal_wrapper");
+        
+        println!("cargo:rustc-link-search=native=/usr/local/lib");
+        println!("cargo:rustc-link-lib=dylib=seal-4.1");
+        
+        println!("cargo:rustc-link-search=native=helib_wrapper/build");
+        println!("cargo:rustc-link-lib=dylib=helib_wrapper");
+        
+        println!("cargo:rustc-link-search=native=/usr/local/helib_pack/lib");
+        println!("cargo:rustc-link-lib=dylib=helib");
+        println!("cargo:rustc-link-lib=dylib=ntl");
+        println!("cargo:rustc-link-lib=dylib=gmp");
+        
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/cpp_wrapper/build");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/helib_wrapper/build");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/lib");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/helib_pack/lib");
+    } else {
+        // ============================================
+        // Linux Configuration (Docker)
+        // ============================================
+        println!("cargo:rustc-link-search=native=/app/cpp_wrapper/build");
+        println!("cargo:rustc-link-lib=seal_wrapper");
+        
+        println!("cargo:rustc-link-search=native=/usr/local/lib");
+        println!("cargo:rustc-link-lib=seal-4.1");
+        
+        println!("cargo:rustc-link-search=native=/app/helib_wrapper/build");
+        println!("cargo:rustc-link-lib=helib_wrapper");
+        
+        // HElib is nested in helib_pack/helib_pack
+        println!("cargo:rustc-link-search=native=/usr/local/helib_pack/helib_pack/lib");
+        println!("cargo:rustc-link-search=native=/usr/local/lib");
+        println!("cargo:rustc-link-lib=helib");
+        println!("cargo:rustc-link-lib=ntl");
+        println!("cargo:rustc-link-lib=gmp");
+        
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/app/cpp_wrapper/build");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/app/helib_wrapper/build");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/lib");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/helib_pack/helib_pack/lib");
+    }
     
     // ============================================
     // Common Dependencies
     // ============================================
     println!("cargo:rustc-link-lib=stdc++");
     println!("cargo:rustc-link-lib=pthread");
-    
-    // Set rpath for runtime library discovery
-    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/cpp_wrapper/build");
-    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/helib_wrapper/build");
-    println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/lib");
-    println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/local/helib_pack/lib");
     
     // ============================================
     // Rerun Triggers
