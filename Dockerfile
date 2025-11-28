@@ -99,7 +99,7 @@ RUN echo "=== Installing SEAL ===" && \
 # Build OpenFHE
 # ============================================
 RUN echo "=== Cloning OpenFHE ===" && \
-    git clone --depth 1 --branch v1.1.2 https://github.com/openfheorg/openfhe-development.git && \
+    git clone --depth 1 --branch v1.2.3 https://github.com/openfheorg/openfhe-development.git && \
     echo "OpenFHE cloned successfully"
 
 RUN echo "=== Building OpenFHE ===" && \
@@ -109,8 +109,13 @@ RUN echo "=== Building OpenFHE ===" && \
     cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/usr/local \
-      -DBUILD_SHARED=ON && \
-    make -j4 && \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_STATIC_LIBS=OFF \
+      -DBUILD_EXAMPLES=ON \
+      -DBUILD_BENCHMARKS=OFF \
+      -DWITH_OPENMP=ON \
+      -DWITH_TCM=OFF && \
+    make -j2 && \
     echo "OpenFHE built successfully"
 
 RUN echo "=== Installing OpenFHE ===" && \
@@ -158,11 +163,11 @@ RUN echo "=== Building OpenFHE wrapper ===" && \
     cd openfhe_cpp_wrapper && \
     mkdir -p build && \
     cd build && \
-    cmake .. && \
-    make && \
+    cmake .. \
+      -DOpenFHE_DIR=/usr/local/lib/OpenFHE && \
+    make -j2 && \
     ls -lh libopenfhe_wrapper.so && \
     cp libopenfhe_wrapper.so /app/ && \
-    echo "OpenFHE wrapper built successfully" || \
-    echo "OpenFHE wrapper build skipped (work in progress)"
+    echo "OpenFHE wrapper built successfully"
 
 CMD ["/bin/bash"]
