@@ -178,3 +178,107 @@ impl Drop for Plaintext {
         }
     }
 }
+
+// Ciphertext (encrypted data)
+pub struct Ciphertext {
+    ptr: NonNull<ffi::OpenFHECiphertext>,
+}
+
+impl Ciphertext {
+    /// Encrypt a plaintext
+    pub fn encrypt(
+        context: &Context,
+        keypair: &KeyPair,
+        plaintext: &Plaintext,
+    ) -> Result<Self> {
+        let ptr = unsafe {
+            ffi::openfhe_encrypt(
+                context.as_ptr(),
+                keypair.as_ptr(),
+                plaintext.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Ciphertext { ptr })
+            .ok_or(OpenFHEError::EncryptionFailed)
+    }
+    
+    /// Decrypt to plaintext
+    pub fn decrypt(
+        &self,
+        context: &Context,
+        keypair: &KeyPair,
+    ) -> Result<Plaintext> {
+        let ptr = unsafe {
+            ffi::openfhe_decrypt(
+                context.as_ptr(),
+                keypair.as_ptr(),
+                self.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Plaintext { ptr })
+            .ok_or(OpenFHEError::DecryptionFailed)
+    }
+    
+    /// Add two ciphertexts homomorphically
+    pub fn add(&self, context: &Context, other: &Ciphertext) -> Result<Ciphertext> {
+        let ptr = unsafe {
+            ffi::openfhe_add(
+                context.as_ptr(),
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Ciphertext { ptr })
+            .ok_or(OpenFHEError::OperationFailed)
+    }
+    
+    /// Multiply two ciphertexts homomorphically
+    pub fn multiply(
+        &self,
+        context: &Context,
+        keypair: &KeyPair,
+        other: &Ciphertext,
+    ) -> Result<Ciphertext> {
+        let ptr = unsafe {
+            ffi::openfhe_multiply(
+                context.as_ptr(),
+                keypair.as_ptr(),
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Ciphertext { ptr })
+            .ok_or(OpenFHEError::OperationFailed)
+    }
+    
+    /// Subtract two ciphertexts homomorphically
+    pub fn subtract(&self, context: &Context, other: &Ciphertext) -> Result<Ciphertext> {
+        let ptr = unsafe {
+            ffi::openfhe_subtract(
+                context.as_ptr(),
+                self.ptr.as_ptr(),
+                other.ptr.as_ptr(),
+            )
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Ciphertext { ptr })
+            .ok_or(OpenFHEError::OperationFailed)
+    }
+}
+
+impl Drop for Ciphertext {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::openfhe_destroy_ciphertext(self.ptr.as_ptr());
+        }
+    }
+}
