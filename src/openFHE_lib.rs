@@ -47,3 +47,42 @@ fn get_last_error() -> String {
             .into_owned()
     }
 }
+
+// Context (owns OpenFHE crypto context)
+pub struct Context {
+    ptr: NonNull<ffi::OpenFHEContext>,
+}
+
+impl Context {
+    /// Create a new OpenFHE BFV context
+    /// 
+    /// # Parameters
+    /// - plaintext_modulus: Plaintext modulus (e.g., 65537)
+    /// - multiplicative_depth: Multiplicative depth (e.g., 2)
+    pub fn new_bfv(plaintext_modulus: u64, multiplicative_depth: u32) -> Result<Self> {
+        let ptr = unsafe {
+            ffi::openfhe_create_bfv_context(plaintext_modulus, multiplicative_depth)
+        };
+        
+        NonNull::new(ptr)
+            .map(|ptr| Context { ptr })
+            .ok_or_else(|| OpenFHEError::Unknown(get_last_error()))
+    }
+    
+    /// Get raw pointer (for internal use)
+    pub(crate) fn as_ptr(&self) -> *mut ffi::OpenFHEContext {
+        self.ptr.as_ptr()
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::openfhe_destroy_context(self.ptr.as_ptr());
+        }
+    }
+}
+
+// Context is thread-safe
+unsafe impl Send for Context {}
+unsafe impl Sync for Context {}
