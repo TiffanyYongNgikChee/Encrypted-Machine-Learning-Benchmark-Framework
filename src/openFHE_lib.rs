@@ -49,11 +49,11 @@ fn get_last_error() -> String {
 }
 
 // Context (owns OpenFHE crypto context)
-pub struct Context {
+pub struct OpenFHEContext {
     ptr: NonNull<ffi::OpenFHEContext>,
 }
 
-impl Context {
+impl OpenFHEContext {
     /// Create a new OpenFHE BFV context
     /// 
     /// # Parameters
@@ -65,7 +65,7 @@ impl Context {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Context { ptr })
+            .map(|ptr| OpenFHEContext { ptr })
             .ok_or_else(|| OpenFHEError::Unknown(get_last_error()))
     }
     
@@ -75,7 +75,7 @@ impl Context {
     }
 }
 
-impl Drop for Context {
+impl Drop for OpenFHEContext {
     fn drop(&mut self) {
         unsafe {
             ffi::openfhe_destroy_context(self.ptr.as_ptr());
@@ -84,23 +84,23 @@ impl Drop for Context {
 }
 
 // Context is thread-safe
-unsafe impl Send for Context {}
-unsafe impl Sync for Context {}
+unsafe impl Send for OpenFHEContext {}
+unsafe impl Sync for OpenFHEContext {}
 
 // KeyPair (owns public and secret keys)
-pub struct KeyPair {
+pub struct OpenFHEKeyPair {
     ptr: NonNull<ffi::OpenFHEKeyPair>,
 }
 
-impl KeyPair {
+impl OpenFHEKeyPair {
     /// Generate a new key pair from context
-    pub fn generate(context: &Context) -> Result<Self> {
+    pub fn generate(context: &OpenFHEContext) -> Result<Self> {
         let ptr = unsafe {
             ffi::openfhe_generate_keypair(context.as_ptr())
         };
         
         NonNull::new(ptr)
-            .map(|ptr| KeyPair { ptr })
+            .map(|ptr| OpenFHEKeyPair { ptr })
             .ok_or_else(|| OpenFHEError::Unknown(get_last_error()))
     }
     
@@ -110,7 +110,7 @@ impl KeyPair {
     }
 }
 
-impl Drop for KeyPair {
+impl Drop for OpenFHEKeyPair {
     fn drop(&mut self) {
         unsafe {
             ffi::openfhe_destroy_keypair(self.ptr.as_ptr());
@@ -119,13 +119,13 @@ impl Drop for KeyPair {
 }
 
 // Plaintext (unencrypted data)
-pub struct Plaintext {
+pub struct OpenFHEPlaintext {
     ptr: NonNull<ffi::OpenFHEPlaintext>,
 }
 
-impl Plaintext {
+impl OpenFHEPlaintext {
     /// Create plaintext from integer vector
-    pub fn from_vec(context: &Context, values: &[i64]) -> Result<Self> {
+    pub fn from_vec(context: &OpenFHEContext, values: &[i64]) -> Result<Self> {
         if values.is_empty() {
             return Err(OpenFHEError::InvalidParameter);
         }
@@ -139,7 +139,7 @@ impl Plaintext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Plaintext { ptr })
+            .map(|ptr| OpenFHEPlaintext { ptr })
             .ok_or_else(|| OpenFHEError::Unknown(get_last_error()))
     }
     
@@ -171,7 +171,7 @@ impl Plaintext {
     }
 }
 
-impl Drop for Plaintext {
+impl Drop for OpenFHEPlaintext {
     fn drop(&mut self) {
         unsafe {
             ffi::openfhe_destroy_plaintext(self.ptr.as_ptr());
@@ -180,16 +180,16 @@ impl Drop for Plaintext {
 }
 
 // Ciphertext (encrypted data)
-pub struct Ciphertext {
+pub struct OpenFHECiphertext {
     ptr: NonNull<ffi::OpenFHECiphertext>,
 }
 
-impl Ciphertext {
+impl OpenFHECiphertext {
     /// Encrypt a plaintext
     pub fn encrypt(
-        context: &Context,
-        keypair: &KeyPair,
-        plaintext: &Plaintext,
+        context: &OpenFHEContext,
+        keypair: &OpenFHEKeyPair,
+        plaintext: &OpenFHEPlaintext,
     ) -> Result<Self> {
         let ptr = unsafe {
             ffi::openfhe_encrypt(
@@ -200,16 +200,16 @@ impl Ciphertext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Ciphertext { ptr })
+            .map(|ptr| OpenFHECiphertext { ptr })
             .ok_or(OpenFHEError::EncryptionFailed)
     }
     
     /// Decrypt to plaintext
     pub fn decrypt(
         &self,
-        context: &Context,
-        keypair: &KeyPair,
-    ) -> Result<Plaintext> {
+        context: &OpenFHEContext,
+        keypair: &OpenFHEKeyPair,
+    ) -> Result<OpenFHEPlaintext> {
         let ptr = unsafe {
             ffi::openfhe_decrypt(
                 context.as_ptr(),
@@ -219,12 +219,12 @@ impl Ciphertext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Plaintext { ptr })
+            .map(|ptr| OpenFHEPlaintext { ptr })
             .ok_or(OpenFHEError::DecryptionFailed)
     }
     
     /// Add two ciphertexts homomorphically
-    pub fn add(&self, context: &Context, other: &Ciphertext) -> Result<Ciphertext> {
+    pub fn add(&self, context: &OpenFHEContext, other: &OpenFHECiphertext) -> Result<OpenFHECiphertext> {
         let ptr = unsafe {
             ffi::openfhe_add(
                 context.as_ptr(),
@@ -234,17 +234,17 @@ impl Ciphertext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Ciphertext { ptr })
+            .map(|ptr| OpenFHECiphertext { ptr })
             .ok_or(OpenFHEError::OperationFailed)
     }
     
     /// Multiply two ciphertexts homomorphically
     pub fn multiply(
         &self,
-        context: &Context,
-        keypair: &KeyPair,
-        other: &Ciphertext,
-    ) -> Result<Ciphertext> {
+        context: &OpenFHEContext,
+        keypair: &OpenFHEKeyPair,
+        other: &OpenFHECiphertext,
+    ) -> Result<OpenFHECiphertext> {
         let ptr = unsafe {
             ffi::openfhe_multiply(
                 context.as_ptr(),
@@ -255,12 +255,12 @@ impl Ciphertext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Ciphertext { ptr })
+            .map(|ptr| OpenFHECiphertext { ptr })
             .ok_or(OpenFHEError::OperationFailed)
     }
     
     /// Subtract two ciphertexts homomorphically
-    pub fn subtract(&self, context: &Context, other: &Ciphertext) -> Result<Ciphertext> {
+    pub fn subtract(&self, context: &OpenFHEContext, other: &OpenFHECiphertext) -> Result<OpenFHECiphertext> {
         let ptr = unsafe {
             ffi::openfhe_subtract(
                 context.as_ptr(),
@@ -270,12 +270,12 @@ impl Ciphertext {
         };
         
         NonNull::new(ptr)
-            .map(|ptr| Ciphertext { ptr })
+            .map(|ptr| OpenFHECiphertext { ptr })
             .ok_or(OpenFHEError::OperationFailed)
     }
 }
 
-impl Drop for Ciphertext {
+impl Drop for OpenFHECiphertext {
     fn drop(&mut self) {
         unsafe {
             ffi::openfhe_destroy_ciphertext(self.ptr.as_ptr());
@@ -290,26 +290,26 @@ mod tests {
     
     #[test]
     fn test_context_creation() {
-        let ctx = Context::new_bfv(65537, 2);
+        let ctx = OpenFHEContext::new_bfv(65537, 2);
         assert!(ctx.is_ok());
     }
     
     #[test]
     fn test_keypair_generation() {
-        let ctx = Context::new_bfv(65537, 2).unwrap();
-        let keypair = KeyPair::generate(&ctx);
+        let ctx = OpenFHEContext::new_bfv(65537, 2).unwrap();
+        let keypair = OpenFHEKeyPair::generate(&ctx);
         assert!(keypair.is_ok());
     }
     
     #[test]
     fn test_encryption_decryption() {
-        let ctx = Context::new_bfv(65537, 2).unwrap();
-        let keypair = KeyPair::generate(&ctx).unwrap();
+        let ctx = OpenFHEContext::new_bfv(65537, 2).unwrap();
+        let keypair = OpenFHEKeyPair::generate(&ctx).unwrap();
         
         let values = vec![1, 2, 3, 4, 5];
-        let plaintext = Plaintext::from_vec(&ctx, &values).unwrap();
+        let plaintext = OpenFHEPlaintext::from_vec(&ctx, &values).unwrap();
         
-        let ciphertext = Ciphertext::encrypt(&ctx, &keypair, &plaintext).unwrap();
+        let ciphertext = OpenFHECiphertext::encrypt(&ctx, &keypair, &plaintext).unwrap();
         let decrypted = ciphertext.decrypt(&ctx, &keypair).unwrap();
         
         let result = decrypted.to_vec().unwrap();
