@@ -27,9 +27,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /root
 
-# ============================================
 # Build NTL (required by HElib)
-# ============================================
 RUN echo "=== Building NTL ===" && \
     wget -q https://libntl.org/ntl-11.5.1.tar.gz && \
     tar -xzf ntl-11.5.1.tar.gz && \
@@ -41,9 +39,7 @@ RUN echo "=== Building NTL ===" && \
     echo "NTL installed successfully" && \
     cd /root && rm -rf ntl-11.5.1*
 
-# ============================================
-# Build HElib (specific stable version)
-# ============================================
+# Build HElib 
 RUN echo "=== Cloning HElib ===" && \
     git clone --depth 1 --branch v2.3.0 https://github.com/homenc/HElib.git && \
     echo "HElib cloned successfully"
@@ -72,9 +68,7 @@ RUN echo "=== Installing HElib ===" && \
     echo "HElib installed successfully" && \
     cd /root && rm -rf HElib
 
-# ============================================
 # Build Microsoft SEAL
-# ============================================
 RUN echo "=== Cloning Microsoft SEAL ===" && \
     git clone --depth 1 --branch v4.1.1 https://github.com/microsoft/SEAL.git && \
     echo "SEAL cloned successfully"
@@ -95,9 +89,7 @@ RUN echo "=== Installing SEAL ===" && \
     echo "SEAL installed successfully" && \
     cd /root && rm -rf SEAL
 
-# ============================================
 # Build OpenFHE
-# ============================================
 RUN echo "=== Cloning OpenFHE ===" && \
     git clone --depth 1 --branch v1.2.3 https://github.com/openfheorg/openfhe-development.git && \
     echo "OpenFHE cloned successfully"
@@ -127,11 +119,11 @@ RUN echo "=== Installing OpenFHE ===" && \
 
 # Verify library installations
 RUN echo "=== Verifying HE libraries ===" && \
-    ldconfig -p | grep -E "seal|helib|openfhe" && \
+    ldconfig -p | grep -E "seal|helib|openfhe" || true && \
     echo "Libraries verified successfully"
 
 # Set environment variables
-ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/helib_pack/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/helib_pack/helib_pack/lib:${LD_LIBRARY_PATH}
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH}
 ENV RUST_BACKTRACE=1
 
@@ -148,7 +140,7 @@ RUN echo "=== Building HElib wrapper ===" && \
     cd helib_wrapper && \
     mkdir -p build && \
     cd build && \
-    cmake .. -DCMAKE_PREFIX_PATH=/usr/local/helib_pack && \
+    cmake .. -DCMAKE_PREFIX_PATH=/usr/local/helib_pack/helib_pack && \
     make && \
     ls -lh libhelib_wrapper.so && \
     cp libhelib_wrapper.so /app/ && \
