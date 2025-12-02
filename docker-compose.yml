@@ -4,7 +4,16 @@ services:
   he-benchmark:
     build: .
     volumes:
-      - .:/app
+      # Mount source files only, not the compiled libraries
+      - ./src:/app/src
+      - ./examples:/app/examples
+      - ./cpp_wrapper:/app/cpp_wrapper
+      - ./helib_wrapper:/app/helib_wrapper
+      - ./openfhe_cpp_wrapper:/app/openfhe_cpp_wrapper
+      - ./Cargo.toml:/app/Cargo.toml
+      - ./Cargo.lock:/app/Cargo.lock
+      - ./build.rs:/app/build.rs
+      # Cache volumes
       - cargo-cache:/root/.cargo/registry
       - target-cache:/app/target
     working_dir: /app
