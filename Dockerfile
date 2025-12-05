@@ -90,9 +90,13 @@ RUN echo "=== Installing SEAL ===" && \
     cd /root && rm -rf SEAL
 
 # Build OpenFHE
-RUN echo "=== Cloning OpenFHE ===" && \
-    git clone --depth 1 --branch v1.2.3 https://github.com/openfheorg/openfhe-development.git && \
-    echo "OpenFHE cloned successfully"
+RUN echo "=== Cloning OpenFHE v1.2.2 ===" && \
+    git clone https://github.com/openfheorg/openfhe-development.git && \
+    cd openfhe-development && \
+    git fetch --all --tags && \
+    git checkout tags/v1.2.2 -b v1.2.2-branch && \
+    git log -1 --oneline && \
+    echo "OpenFHE v1.2.2 checked out successfully"
 
 RUN echo "=== Building OpenFHE ===" && \
     cd /root/openfhe-development && \
@@ -114,6 +118,8 @@ RUN echo "=== Installing OpenFHE ===" && \
     cd /root/openfhe-development/build && \
     make install && \
     ldconfig && \
+    echo "Verifying OpenFHE version..." && \
+    cat /usr/local/lib/OpenFHE/OpenFHEConfig.cmake | grep BASE_OPENFHE_VERSION && \
     echo "OpenFHE installed successfully" && \
     cd /root && rm -rf openfhe-development
 
@@ -129,11 +135,14 @@ ENV RUST_BACKTRACE=1
 
 WORKDIR /app
 
-# Copy project files
-COPY . .
-
-# Clean any existing build directories
-RUN rm -rf helib_wrapper/build cpp_wrapper/build openfhe_cpp_wrapper/build target
+# Copy ONLY the source files needed to build wrappers
+COPY cpp_wrapper ./cpp_wrapper
+COPY helib_wrapper ./helib_wrapper
+COPY openfhe_cpp_wrapper ./openfhe_cpp_wrapper
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY examples ./examples
+COPY build.rs ./
 
 # Build the wrappers
 RUN echo "=== Building HElib wrapper ===" && \
@@ -166,6 +175,17 @@ RUN echo "=== Building OpenFHE wrapper ===" && \
     ls -lh libopenfhe_wrapper.so && \
     cp libopenfhe_wrapper.so /app/ && \
     echo "OpenFHE wrapper built successfully"
+
+# Store compiled libraries in a safe location
+RUN mkdir -p /app/lib && \
+    cp /app/cpp_wrapper/build/libseal_wrapper.so /app/lib/ && \
+    cp /app/helib_wrapper/build/libhelib_wrapper.so /app/lib/ && \
+    cp /app/openfhe_cpp_wrapper/build/libopenfhe_wrapper.so* /app/lib/ && \
+    echo "Libraries stored in /app/lib"
+
+# Update library search path
+ENV LD_LIBRARY_PATH=/app/lib:/usr/local/lib:/usr/local/helib_pack/helib_pack/lib:${LD_LIBRARY_PATH}
+
 
 # Build the Rust project
 RUN echo "=== Building Rust project ===" && \
