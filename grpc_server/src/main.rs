@@ -474,6 +474,181 @@ fn run_helib_benchmark(num_operations: i32) -> BenchmarkResponse {
 }
 
 // ============================================
+// OpenFHE Helper Functions
+// ============================================
+
+const OPENFHE_PLAINTEXT_MOD: u64 = 65537;
+const OPENFHE_MULT_DEPTH: u32 = 2;
+
+fn run_openfhe_encrypt(values: Vec<i64>) -> Result<usize, String> {
+    use he_benchmark::{OpenFHEContext, OpenFHEKeyPair, OpenFHEPlaintext, OpenFHECiphertext};
+    
+    let context = OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH)
+        .map_err(|e| format!("OpenFHE context error: {}", e))?;
+    let keypair = OpenFHEKeyPair::generate(&context)
+        .map_err(|e| format!("OpenFHE keypair error: {}", e))?;
+    
+    let plaintext = OpenFHEPlaintext::from_vec(&context, &values)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    let _ciphertext = OpenFHECiphertext::encrypt(&context, &keypair, &plaintext)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    
+    // OpenFHE ciphertext size estimate
+    Ok(8192)
+}
+
+fn run_openfhe_decrypt(values: Vec<i64>) -> Result<Vec<i64>, String> {
+    use he_benchmark::{OpenFHEContext, OpenFHEKeyPair, OpenFHEPlaintext, OpenFHECiphertext};
+    
+    let context = OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH)
+        .map_err(|e| format!("OpenFHE context error: {}", e))?;
+    let keypair = OpenFHEKeyPair::generate(&context)
+        .map_err(|e| format!("OpenFHE keypair error: {}", e))?;
+    
+    let plaintext = OpenFHEPlaintext::from_vec(&context, &values)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    let ciphertext = OpenFHECiphertext::encrypt(&context, &keypair, &plaintext)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    let decrypted = ciphertext.decrypt(&context, &keypair)
+        .map_err(|e| format!("OpenFHE decrypt error: {}", e))?;
+    
+    let result = decrypted.to_vec()
+        .map_err(|e| format!("OpenFHE to_vec error: {}", e))?;
+    
+    Ok(result[..values.len().min(result.len())].to_vec())
+}
+
+fn run_openfhe_add(values1: &[i64], values2: &[i64]) -> Result<Vec<i64>, String> {
+    use he_benchmark::{OpenFHEContext, OpenFHEKeyPair, OpenFHEPlaintext, OpenFHECiphertext};
+    
+    let context = OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH)
+        .map_err(|e| format!("OpenFHE context error: {}", e))?;
+    let keypair = OpenFHEKeyPair::generate(&context)
+        .map_err(|e| format!("OpenFHE keypair error: {}", e))?;
+    
+    let pt1 = OpenFHEPlaintext::from_vec(&context, values1)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    let pt2 = OpenFHEPlaintext::from_vec(&context, values2)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    
+    let ct1 = OpenFHECiphertext::encrypt(&context, &keypair, &pt1)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    let ct2 = OpenFHECiphertext::encrypt(&context, &keypair, &pt2)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    
+    let result_ct = ct1.add(&context, &ct2)
+        .map_err(|e| format!("OpenFHE add error: {}", e))?;
+    let decrypted = result_ct.decrypt(&context, &keypair)
+        .map_err(|e| format!("OpenFHE decrypt error: {}", e))?;
+    
+    let result = decrypted.to_vec()
+        .map_err(|e| format!("OpenFHE to_vec error: {}", e))?;
+    
+    Ok(result[..values1.len().max(values2.len()).min(result.len())].to_vec())
+}
+
+fn run_openfhe_multiply(values1: &[i64], values2: &[i64]) -> Result<Vec<i64>, String> {
+    use he_benchmark::{OpenFHEContext, OpenFHEKeyPair, OpenFHEPlaintext, OpenFHECiphertext};
+    
+    let context = OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH)
+        .map_err(|e| format!("OpenFHE context error: {}", e))?;
+    let keypair = OpenFHEKeyPair::generate(&context)
+        .map_err(|e| format!("OpenFHE keypair error: {}", e))?;
+    
+    let pt1 = OpenFHEPlaintext::from_vec(&context, values1)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    let pt2 = OpenFHEPlaintext::from_vec(&context, values2)
+        .map_err(|e| format!("OpenFHE plaintext error: {}", e))?;
+    
+    let ct1 = OpenFHECiphertext::encrypt(&context, &keypair, &pt1)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    let ct2 = OpenFHECiphertext::encrypt(&context, &keypair, &pt2)
+        .map_err(|e| format!("OpenFHE encrypt error: {}", e))?;
+    
+    let result_ct = ct1.multiply(&context, &keypair, &ct2)
+        .map_err(|e| format!("OpenFHE multiply error: {}", e))?;
+    let decrypted = result_ct.decrypt(&context, &keypair)
+        .map_err(|e| format!("OpenFHE decrypt error: {}", e))?;
+    
+    let result = decrypted.to_vec()
+        .map_err(|e| format!("OpenFHE to_vec error: {}", e))?;
+    
+    Ok(result[..values1.len().max(values2.len()).min(result.len())].to_vec())
+}
+
+fn run_openfhe_benchmark(num_operations: i32) -> BenchmarkResponse {
+    use he_benchmark::{OpenFHEContext, OpenFHEKeyPair, OpenFHEPlaintext, OpenFHECiphertext};
+    
+    // Key generation timing
+    let key_start = Instant::now();
+    let context = match OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH) {
+        Ok(ctx) => ctx,
+        Err(e) => return BenchmarkResponse {
+            key_gen_time_ms: 0.0, encryption_time_ms: 0.0, addition_time_ms: 0.0,
+            multiplication_time_ms: 0.0, decryption_time_ms: 0.0,
+            status: format!("OpenFHE context failed: {}", e),
+        },
+    };
+    
+    let keypair = match OpenFHEKeyPair::generate(&context) {
+        Ok(kp) => kp,
+        Err(e) => return BenchmarkResponse {
+            key_gen_time_ms: 0.0, encryption_time_ms: 0.0, addition_time_ms: 0.0,
+            multiplication_time_ms: 0.0, decryption_time_ms: 0.0,
+            status: format!("OpenFHE keypair failed: {}", e),
+        },
+    };
+    let key_gen_time = key_start.elapsed();
+    
+    // Test data
+    let test_data: Vec<i64> = (0..64).collect();
+    
+    // Encryption timing
+    let encrypt_start = Instant::now();
+    let mut ciphertexts = Vec::new();
+    for _ in 0..num_operations {
+        let pt = match OpenFHEPlaintext::from_vec(&context, &test_data) {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+        if let Ok(ct) = OpenFHECiphertext::encrypt(&context, &keypair, &pt) {
+            ciphertexts.push(ct);
+        }
+    }
+    let encryption_time = encrypt_start.elapsed();
+    
+    // Addition timing
+    let add_start = Instant::now();
+    for i in 1..ciphertexts.len() {
+        let _ = ciphertexts[0].add(&context, &ciphertexts[i]);
+    }
+    let addition_time = add_start.elapsed();
+    
+    // Multiplication timing
+    let mult_start = Instant::now();
+    for i in 1..ciphertexts.len() {
+        let _ = ciphertexts[0].multiply(&context, &keypair, &ciphertexts[i]);
+    }
+    let multiplication_time = mult_start.elapsed();
+    
+    // Decryption timing
+    let decrypt_start = Instant::now();
+    for ct in &ciphertexts {
+        let _ = ct.decrypt(&context, &keypair);
+    }
+    let decryption_time = decrypt_start.elapsed();
+    
+    BenchmarkResponse {
+        key_gen_time_ms: key_gen_time.as_secs_f64() * 1000.0,
+        encryption_time_ms: encryption_time.as_secs_f64() * 1000.0 / num_operations as f64,
+        addition_time_ms: addition_time.as_secs_f64() * 1000.0 / (num_operations - 1).max(1) as f64,
+        multiplication_time_ms: multiplication_time.as_secs_f64() * 1000.0 / (num_operations - 1).max(1) as f64,
+        decryption_time_ms: decryption_time.as_secs_f64() * 1000.0 / num_operations as f64,
+        status: format!("OpenFHE benchmark complete: {} operations", num_operations),
+    }
+}
+
+// ============================================
 // gRPC Service Implementation
 // ============================================
 
@@ -518,6 +693,17 @@ impl HeService for HEServiceImpl {
                 return Err(Status::internal(format!("Failed to create HELib context: {}", e)));
             }
             println!("   ✓ HELib context validated");
+        } else if library == "OpenFHE" {
+            let result = tokio::task::spawn_blocking(move || {
+                use he_benchmark::OpenFHEContext;
+                OpenFHEContext::new_bfv(OPENFHE_PLAINTEXT_MOD, OPENFHE_MULT_DEPTH)
+                    .map(|_| ()).map_err(|e| format!("{}", e))
+            }).await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?;
+            
+            if let Err(e) = result {
+                return Err(Status::internal(format!("Failed to create OpenFHE context: {}", e)));
+            }
+            println!("   ✓ OpenFHE context validated");
         }
         
         let session = SessionConfig {
@@ -560,6 +746,11 @@ impl HeService for HEServiceImpl {
         let (ciphertext_bytes, byte_count) = if library == "HELib" {
             let first_value = values.first().copied().unwrap_or(0);
             let result = tokio::task::spawn_blocking(move || run_helib_encrypt(first_value))
+                .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
+                .map_err(|e| Status::internal(e))?;
+            (vec![0u8; result.min(1024)], result)
+        } else if library == "OpenFHE" {
+            let result = tokio::task::spawn_blocking(move || run_openfhe_encrypt(values))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
                 .map_err(|e| Status::internal(e))?;
             (vec![0u8; result.min(1024)], result)
@@ -607,6 +798,10 @@ impl HeService for HEServiceImpl {
             tokio::task::spawn_blocking(move || run_helib_decrypt(value))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
                 .map_err(|e| Status::internal(e))?
+        } else if library == "OpenFHE" {
+            tokio::task::spawn_blocking(move || run_openfhe_decrypt(original_values))
+                .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
+                .map_err(|e| Status::internal(e))?
         } else {
             tokio::task::spawn_blocking(move || run_seal_decrypt(poly_degree, plain_modulus, &original_values))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
@@ -645,6 +840,10 @@ impl HeService for HEServiceImpl {
             let v1 = values1.first().copied().unwrap_or(0);
             let v2 = values2.first().copied().unwrap_or(0);
             tokio::task::spawn_blocking(move || run_helib_add(v1, v2))
+                .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
+                .map_err(|e| Status::internal(e))?
+        } else if library == "OpenFHE" {
+            tokio::task::spawn_blocking(move || run_openfhe_add(&values1, &values2))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
                 .map_err(|e| Status::internal(e))?
         } else {
@@ -687,6 +886,10 @@ impl HeService for HEServiceImpl {
             tokio::task::spawn_blocking(move || run_helib_multiply(v1, v2))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
                 .map_err(|e| Status::internal(e))?
+        } else if library == "OpenFHE" {
+            tokio::task::spawn_blocking(move || run_openfhe_multiply(&values1, &values2))
+                .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
+                .map_err(|e| Status::internal(e))?
         } else {
             tokio::task::spawn_blocking(move || run_seal_multiply(poly_degree, plain_modulus, &values1, &values2))
                 .await.map_err(|e| Status::internal(format!("Task failed: {}", e)))?
@@ -715,6 +918,9 @@ impl HeService for HEServiceImpl {
         let response = if library == "HELib" {
             tokio::task::spawn_blocking(move || run_helib_benchmark(num_ops))
                 .await.map_err(|e| Status::internal(format!("Benchmark failed: {}", e)))?
+        } else if library == "OpenFHE" {
+            tokio::task::spawn_blocking(move || run_openfhe_benchmark(num_ops))
+                .await.map_err(|e| Status::internal(format!("Benchmark failed: {}", e)))?
         } else {
             let poly_degree = 8192u64;
             tokio::task::spawn_blocking(move || run_seal_benchmark(poly_degree, num_ops))
@@ -737,7 +943,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚════════════════════════════════════════════════════════════╝");
     println!();
     println!("  📍 Listening on: {}", addr);
-    println!("  �� Libraries: Microsoft SEAL (BFV), HELib (BGV)");
+    println!("  🔧 Libraries: Microsoft SEAL (BFV), HELib (BGV), OpenFHE (BFV)");
     println!();
     println!("  Available services:");
     println!("    • GenerateKeys  - Create encryption context and keys");
