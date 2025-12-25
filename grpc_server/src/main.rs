@@ -1046,7 +1046,9 @@ impl HeService for HEServiceImpl {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    // Use environment variable or default to [::]:50051 (all interfaces, IPv6+IPv4)
+    let bind_addr = std::env::var("GRPC_BIND_ADDR").unwrap_or_else(|_| "[::]:50051".to_string());
+    let addr = bind_addr.parse()?;
     let service = HEServiceImpl::new();
 
     println!("╔════════════════════════════════════════════════════════════╗");
@@ -1065,7 +1067,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    • RunBenchmark           - Benchmark single library");
     println!("    • RunComparisonBenchmark - Compare all three libraries");
     println!();
-    println!("  Ready to accept connections! 🚀");
+    println!("  Ready to accept connections!");
     println!();
 
     Server::builder()

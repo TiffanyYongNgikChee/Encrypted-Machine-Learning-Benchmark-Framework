@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     patchelf \
+    protobuf-compiler \
+    libprotobuf-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
@@ -144,6 +146,9 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY examples ./examples
 COPY build.rs ./
+# gRPC server files
+COPY proto ./proto
+COPY grpc_server ./grpc_server
 
 # Build the wrappers
 RUN echo "=== Building HElib wrapper ===" && \
@@ -195,6 +200,13 @@ RUN echo "=== Building Rust examples ===" && \
     echo "Rust examples built successfully" && \
     ls -lh /app/target/release/examples/benchmark && \
     ls -lh /app/target/release/examples/medical_data
+
+# Build the gRPC server
+RUN echo "=== Building gRPC server ===" && \
+    cd grpc_server && \
+    cargo build --release && \
+    echo "gRPC server built successfully" && \
+    ls -lh /app/grpc_server/target/release/he-grpc-server
 
 # Verify all shared libraries are accessible
 RUN echo "=== Verifying wrapper libraries ===" && \
@@ -248,6 +260,7 @@ COPY --from=builder /app/lib/libopenfhe_wrapper.so* /app/lib/
 # Copy the compiled Rust binaries
 COPY --from=builder /app/target/release/examples/benchmark /app/benchmark
 COPY --from=builder /app/target/release/examples/medical_data /app/medical_data
+COPY --from=builder /app/grpc_server/target/release/he-grpc-server /app/he-grpc-server
 
 # Update library cache so the system can find all .so files
 RUN ldconfig
@@ -258,11 +271,19 @@ ENV RUST_BACKTRACE=1
 
 WORKDIR /app
 
+# Expose gRPC port
+EXPOSE 50051
+
 # Available binaries:
+# - ./he-grpc-server  (gRPC server for HE operations)
 # - ./benchmark       (3-way HE library comparison)
 # - ./medical_data    (SEAL medical record demo)
 # 
 # Usage:
-#   docker run --rm <image> ./benchmark
-#   docker run --rm <image> ./medical_data
-#   docker run -it --rm <image> /bin/bash
+#   docker run -p 50051:50051 <image>                    # Run gRPC server
+#   docker run --rm <image> ./benchmark                  # Run benchmark
+#   docker run --rm <image> ./medical_data               # Run medical demo
+#   docker run -it --rm <image> /bin/bash                # Interactive shell
+
+# Default command: run the gRPC server
+CMD ["./he-grpc-server"]

@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  # gRPC Server for Homomorphic Encryption
+  he-grpc-server:
+    build: .
+    ports:
+      - "50051:50051"
+    environment:
+      - RUST_BACKTRACE=1
+      - LD_LIBRARY_PATH=/app/lib:/usr/local/lib:/usr/local/helib_pack/helib_pack/lib
+      - GRPC_BIND_ADDR=[::]:50051
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Development/Benchmark service
   he-benchmark:
     build: .
     volumes:
@@ -10,6 +27,8 @@ services:
       - ./cpp_wrapper:/app/cpp_wrapper
       - ./helib_wrapper:/app/helib_wrapper
       - ./openfhe_cpp_wrapper:/app/openfhe_cpp_wrapper
+      - ./proto:/app/proto
+      - ./grpc_server:/app/grpc_server
       - ./Cargo.toml:/app/Cargo.toml
       - ./Cargo.lock:/app/Cargo.lock
       - ./build.rs:/app/build.rs
@@ -19,9 +38,10 @@ services:
     working_dir: /app
     stdin_open: true
     tty: true
+    command: ./benchmark
     environment:
       - RUST_BACKTRACE=1
-      - LD_LIBRARY_PATH=/usr/local/lib:/usr/local/helib_pack/lib
+      - LD_LIBRARY_PATH=/app/lib:/usr/local/lib:/usr/local/helib_pack/helib_pack/lib
 
 volumes:
   cargo-cache:
