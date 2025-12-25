@@ -20,3 +20,7 @@ he-benchmark-spike = { path = ".." }
 
 [build-dependencies]
 tonic-build = "0.11"
+
+[[bin]]
+name = "he-grpc-server"
+path = "src/main.rs"
