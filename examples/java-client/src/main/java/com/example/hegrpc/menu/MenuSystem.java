@@ -6,6 +6,7 @@ import com.example.hegrpc.analytics.RegionalAnalytics;
 import com.example.hegrpc.data.PatientDataEntry;
 import com.example.hegrpc.manager.HospitalManager;
 import com.example.hegrpc.model.Hospital;
+import com.example.hegrpc.persistence.DataPersistence;
 import com.example.hegrpc.service.HEClientService;
 
 /**
@@ -20,6 +21,7 @@ public class MenuSystem {
     private final HospitalManager hospitalManager;
     private final PatientDataEntry patientDataEntry;
     private final RegionalAnalytics regionalAnalytics;
+    private final DataPersistence dataPersistence;
     private boolean running;
     
     public MenuSystem(HEClientService heClient) {
@@ -28,6 +30,7 @@ public class MenuSystem {
         this.hospitalManager = new HospitalManager(heClient);
         this.patientDataEntry = new PatientDataEntry(scanner, heClient, hospitalManager);
         this.regionalAnalytics = new RegionalAnalytics(scanner, heClient, hospitalManager);
+        this.dataPersistence = new DataPersistence(scanner, heClient, hospitalManager);
         this.running = true;
     }
     
@@ -217,16 +220,10 @@ public class MenuSystem {
         regionalAnalytics.showMenu();
     }
     
-    // ==================== OPTION 4: Save/Load Data (Placeholder) ====================
+    // ==================== OPTION 4: Save/Load Data ====================
     
     private void saveLoadDataMenu() {
-        System.out.println();
-        System.out.println("      COMING IN PHASE 4: Data Persistence");
-        System.out.println("   - Save encrypted data to JSON files");
-        System.out.println("   - Load previous sessions");
-        System.out.println("   - Export/import hospital data");
-        System.out.println();
-        pressEnterToContinue();
+        dataPersistence.showMenu();
     }
     
     // ==================== OPTION 5: Security Demo (Placeholder) ====================
