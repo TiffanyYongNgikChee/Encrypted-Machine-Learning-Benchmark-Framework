@@ -2,6 +2,7 @@ package com.example.hegrpc.menu;
 
 import java.util.Scanner;
 
+import com.example.hegrpc.analytics.RegionalAnalytics;
 import com.example.hegrpc.data.PatientDataEntry;
 import com.example.hegrpc.manager.HospitalManager;
 import com.example.hegrpc.model.Hospital;
@@ -18,6 +19,7 @@ public class MenuSystem {
     private final HEClientService heClient;
     private final HospitalManager hospitalManager;
     private final PatientDataEntry patientDataEntry;
+    private final RegionalAnalytics regionalAnalytics;
     private boolean running;
     
     public MenuSystem(HEClientService heClient) {
@@ -25,6 +27,7 @@ public class MenuSystem {
         this.heClient = heClient;
         this.hospitalManager = new HospitalManager(heClient);
         this.patientDataEntry = new PatientDataEntry(scanner, heClient, hospitalManager);
+        this.regionalAnalytics = new RegionalAnalytics(scanner, heClient, hospitalManager);
         this.running = true;
     }
     
@@ -208,16 +211,10 @@ public class MenuSystem {
         patientDataEntry.showMenu();
     }
     
-    // ==================== OPTION 3: Regional Analytics (Placeholder) ====================
+    // ==================== OPTION 3: Regional Analytics ====================
     
     private void regionalAnalyticsMenu() {
-        System.out.println();
-        System.out.println("      COMING IN PHASE 3: Regional Analytics");
-        System.out.println("   - Sum encrypted data across hospitals");
-        System.out.println("   - Compute regional statistics");
-        System.out.println("   - Privacy-preserving aggregation");
-        System.out.println();
-        pressEnterToContinue();
+        regionalAnalytics.showMenu();
     }
     
     // ==================== OPTION 4: Save/Load Data (Placeholder) ====================
