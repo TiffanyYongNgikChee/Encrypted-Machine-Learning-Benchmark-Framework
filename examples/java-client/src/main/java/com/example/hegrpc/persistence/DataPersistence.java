@@ -1,15 +1,21 @@
 package com.example.hegrpc.persistence;
 
-import com.example.hegrpc.data.PatientDataEntry;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+
 import com.example.hegrpc.manager.HospitalManager;
 import com.example.hegrpc.model.Hospital;
 import com.example.hegrpc.service.HEClientService;
-
-import java.io.*;
-import java.nio.file.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
 
 /**
  * Data Persistence - Save and Load Encrypted Hospital Data
@@ -42,7 +48,7 @@ public class DataPersistence {
         while (inSubmenu) {
             System.out.println();
             System.out.println("┌──────────────────────────────────────────────────────────────────────────────┐");
-            System.out.println("│                          💾 SAVE / LOAD DATA                                │");
+            System.out.println("│                             SAVE / LOAD DATA                                │");
             System.out.println("│                    Persist Encrypted Data to Files                          │");
             System.out.println("├──────────────────────────────────────────────────────────────────────────────┤");
             System.out.println("│   [1] Save All Hospitals to File                                            │");
@@ -72,7 +78,7 @@ public class DataPersistence {
      */
     private void saveAllHospitals() {
         if (hospitalManager.getHospitalCount() == 0) {
-            System.out.println("\n   📭 No hospitals to save!");
+            System.out.println("\n     No hospitals to save!");
             pressEnterToContinue();
             return;
         }
@@ -85,7 +91,7 @@ public class DataPersistence {
         String filename = "all_hospitals_" + timestamp + ".json";
         Path filePath = Paths.get(SAVE_DIR, filename);
         
-        System.out.println("\n   💾 Saving all hospitals to: " + filePath);
+        System.out.println("\n     Saving all hospitals to: " + filePath);
         System.out.println("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         
         try {
@@ -114,12 +120,12 @@ public class DataPersistence {
             Files.writeString(filePath, json.toString());
             
             System.out.println("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            System.out.println("   ✅ Successfully saved " + count + " hospital(s)!");
-            System.out.println("   📁 File: " + filePath.toAbsolutePath());
-            System.out.printf("   📊 Size: %,d bytes%n", Files.size(filePath));
+            System.out.println("      Successfully saved " + count + " hospital(s)!");
+            System.out.println("      File: " + filePath.toAbsolutePath());
+            System.out.printf("      Size: %,d bytes%n", Files.size(filePath));
             
         } catch (IOException e) {
-            System.out.println("   ❌ Error saving file: " + e.getMessage());
+            System.out.println("      Error saving file: " + e.getMessage());
         }
         
         pressEnterToContinue();
@@ -130,7 +136,7 @@ public class DataPersistence {
      */
     private void saveSingleHospital() {
         if (hospitalManager.getHospitalCount() == 0) {
-            System.out.println("\n   📭 No hospitals to save!");
+            System.out.println("\n      No hospitals to save!");
             pressEnterToContinue();
             return;
         }
@@ -141,7 +147,7 @@ public class DataPersistence {
         
         Hospital hospital = hospitalManager.getHospital(id);
         if (hospital == null) {
-            System.out.println("   ❌ Hospital not found: " + id);
+            System.out.println("      Hospital not found: " + id);
             pressEnterToContinue();
             return;
         }
@@ -155,7 +161,7 @@ public class DataPersistence {
         String filename = hospital.getId() + "_" + safeName + "_" + timestamp + ".json";
         Path filePath = Paths.get(SAVE_DIR, filename);
         
-        System.out.println("\n   💾 Saving hospital to: " + filePath);
+        System.out.println("\n    Saving hospital to: " + filePath);
         
         try {
             StringBuilder json = new StringBuilder();
@@ -167,12 +173,12 @@ public class DataPersistence {
             
             Files.writeString(filePath, json.toString());
             
-            System.out.println("   ✅ Successfully saved!");
-            System.out.println("   📁 File: " + filePath.toAbsolutePath());
-            System.out.printf("   📊 Size: %,d bytes%n", Files.size(filePath));
+            System.out.println("    Successfully saved!");
+            System.out.println("    File: " + filePath.toAbsolutePath());
+            System.out.printf("    Size: %,d bytes%n", Files.size(filePath));
             
         } catch (IOException e) {
-            System.out.println("   ❌ Error saving file: " + e.getMessage());
+            System.out.println("    Error saving file: " + e.getMessage());
         }
         
         pressEnterToContinue();
@@ -187,13 +193,13 @@ public class DataPersistence {
         // List available files
         List<Path> jsonFiles = listJsonFiles();
         if (jsonFiles.isEmpty()) {
-            System.out.println("\n   📭 No saved files found in " + SAVE_DIR + "/");
+            System.out.println("\n    No saved files found in " + SAVE_DIR + "/");
             System.out.println("   Save some data first!");
             pressEnterToContinue();
             return;
         }
         
-        System.out.println("\n   📂 Available files:");
+        System.out.println("\n    Available files:");
         for (int i = 0; i < jsonFiles.size(); i++) {
             Path file = jsonFiles.get(i);
             try {
@@ -208,7 +214,7 @@ public class DataPersistence {
         int choice = readIntChoice(1, jsonFiles.size());
         Path selectedFile = jsonFiles.get(choice - 1);
         
-        System.out.println("\n   📂 Loading from: " + selectedFile.getFileName());
+        System.out.println("\n    Loading from: " + selectedFile.getFileName());
         System.out.println("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         
         try {
@@ -216,12 +222,12 @@ public class DataPersistence {
             int hospitalsLoaded = parseAndLoadJson(content);
             
             System.out.println("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            System.out.println("   ✅ Loaded " + hospitalsLoaded + " hospital(s)!");
+            System.out.println("    Loaded " + hospitalsLoaded + " hospital(s)!");
             
         } catch (IOException e) {
-            System.out.println("   ❌ Error reading file: " + e.getMessage());
+            System.out.println("    Error reading file: " + e.getMessage());
         } catch (Exception e) {
-            System.out.println("   ❌ Error parsing file: " + e.getMessage());
+            System.out.println("    Error parsing file: " + e.getMessage());
         }
         
         pressEnterToContinue();
@@ -235,24 +241,24 @@ public class DataPersistence {
         List<Path> jsonFiles = listJsonFiles();
         
         if (jsonFiles.isEmpty()) {
-            System.out.println("\n   📭 No saved files found in " + SAVE_DIR + "/");
+            System.out.println("\n    No saved files found in " + SAVE_DIR + "/");
             pressEnterToContinue();
             return;
         }
         
         System.out.println();
         System.out.println("╔══════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                            📁 SAVED FILES                                    ║");
+        System.out.println("║                               SAVED FILES                                    ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════════════════╣");
         
         for (Path file : jsonFiles) {
             try {
                 long size = Files.size(file);
                 String modified = Files.getLastModifiedTime(file).toString().substring(0, 19);
-                System.out.printf("║  📄 %-50s %,10d bytes ║%n", 
+                System.out.printf("║   %-50s %,10d bytes ║%n", 
                     truncate(file.getFileName().toString(), 50), size);
             } catch (IOException e) {
-                System.out.printf("║  📄 %-68s ║%n", file.getFileName());
+                System.out.printf("║   %-68s ║%n", file.getFileName());
             }
         }
         
@@ -272,12 +278,12 @@ public class DataPersistence {
         List<Path> jsonFiles = listJsonFiles();
         
         if (jsonFiles.isEmpty()) {
-            System.out.println("\n   📭 No saved files found!");
+            System.out.println("\n    No saved files found!");
             pressEnterToContinue();
             return;
         }
         
-        System.out.println("\n   📂 Available files:");
+        System.out.println("\n    Available files:");
         for (int i = 0; i < jsonFiles.size(); i++) {
             System.out.printf("   [%d] %s%n", i + 1, jsonFiles.get(i).getFileName());
         }
@@ -288,7 +294,7 @@ public class DataPersistence {
         
         System.out.println();
         System.out.println("╔══════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                          📄 FILE PREVIEW                                     ║");
+        System.out.println("║                             FILE PREVIEW                                     ║");
         System.out.printf("║  File: %-70s║%n", truncate(selectedFile.getFileName().toString(), 70));
         System.out.println("╠══════════════════════════════════════════════════════════════════════════════╣");
         
@@ -424,7 +430,7 @@ public class DataPersistence {
             
             // Check if hospital already exists
             if (hospitalManager.hospitalExists(id)) {
-                System.out.printf("   ⚠️  Hospital %s already exists, skipping...%n", id);
+                System.out.printf("       Hospital %s already exists, skipping...%n", id);
                 return false;
             }
             
@@ -456,7 +462,7 @@ public class DataPersistence {
             return true;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️  Error parsing hospital block: " + e.getMessage());
+            System.out.println("       Error parsing hospital block: " + e.getMessage());
             return false;
         }
     }
@@ -547,7 +553,7 @@ public class DataPersistence {
         try {
             Files.createDirectories(Paths.get(SAVE_DIR));
         } catch (IOException e) {
-            System.out.println("   ⚠️  Could not create save directory: " + e.getMessage());
+            System.out.println("       Could not create save directory: " + e.getMessage());
         }
     }
     
@@ -578,9 +584,9 @@ public class DataPersistence {
                 if (choice >= min && choice <= max) {
                     return choice;
                 }
-                System.out.printf("   ❌ Please enter a number between %d and %d: ", min, max);
+                System.out.printf("      Please enter a number between %d and %d: ", min, max);
             } catch (NumberFormatException e) {
-                System.out.print("   ❌ Invalid input. Please enter a number: ");
+                System.out.print("      Invalid input. Please enter a number: ");
             }
         }
     }

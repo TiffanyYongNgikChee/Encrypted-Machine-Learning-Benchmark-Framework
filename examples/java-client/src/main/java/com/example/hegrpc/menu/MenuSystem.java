@@ -7,6 +7,7 @@ import com.example.hegrpc.data.PatientDataEntry;
 import com.example.hegrpc.manager.HospitalManager;
 import com.example.hegrpc.model.Hospital;
 import com.example.hegrpc.persistence.DataPersistence;
+import com.example.hegrpc.security.SecurityDemo;
 import com.example.hegrpc.service.HEClientService;
 
 /**
@@ -22,6 +23,7 @@ public class MenuSystem {
     private final PatientDataEntry patientDataEntry;
     private final RegionalAnalytics regionalAnalytics;
     private final DataPersistence dataPersistence;
+    private final SecurityDemo securityDemo;
     private boolean running;
     
     public MenuSystem(HEClientService heClient) {
@@ -31,6 +33,7 @@ public class MenuSystem {
         this.patientDataEntry = new PatientDataEntry(scanner, heClient, hospitalManager);
         this.regionalAnalytics = new RegionalAnalytics(scanner, heClient, hospitalManager);
         this.dataPersistence = new DataPersistence(scanner, heClient, hospitalManager);
+        this.securityDemo = new SecurityDemo(scanner, heClient, hospitalManager);
         this.running = true;
     }
     
@@ -226,16 +229,10 @@ public class MenuSystem {
         dataPersistence.showMenu();
     }
     
-    // ==================== OPTION 5: Security Demo (Placeholder) ====================
+    // ==================== OPTION 5: Security Demo ====================
     
     private void securityDemoMenu() {
-        System.out.println();
-        System.out.println("      COMING IN PHASE 5: Security Demo");
-        System.out.println("   - Visualize encrypted data (hex dump)");
-        System.out.println("   - Show encryption randomness");
-        System.out.println("   - Simulate interception attacks");
-        System.out.println();
-        pressEnterToContinue();
+        securityDemo.showMenu();
     }
     
     // ==================== OPTION 6: Benchmark (Placeholder) ====================
