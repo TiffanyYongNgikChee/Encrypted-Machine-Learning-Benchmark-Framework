@@ -413,29 +413,6 @@ netstat -tuln | grep 50051
 
 ---
 
-## Documentation
-
-- [User Guide](docs/user-guide.md) - How to run benchmarks
-- [Developer Guide](docs/developer-guide.md) - How to extend the framework
-- [API Reference](docs/api-reference.md) - gRPC and REST API documentation
-- [Architecture](docs/architecture.md) - System design and components
-- [Comparison with HEBench](docs/comparison-hebench.md) - Detailed comparison
-
----
-
-## Contributing
-
-This project welcomes contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-**Ways to contribute:**
-- Add new workloads
-- Implement additional FHE library backends
-- Improve performance
-- Write documentation
-- Report bugs
-
----
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
